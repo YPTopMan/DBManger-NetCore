@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
+
 
 namespace DdManger.Web.Models
 {
@@ -12,12 +14,14 @@ namespace DdManger.Web.Models
     {
         /// <summary>
         /// 数据库名称
-        /// </summary>
+        /// </summary>    
+        [Display(Name = "数据库名称")]
         public string Name { get; set; }
 
         /// <summary>
         /// 路径
         /// </summary>
+        [Display(Name = "数据库路径")]
         public string FileName { get; set; }
     }
 }
