@@ -1,0 +1,6 @@
+
+-- 帮助
+dotnet help
+---新增类库
+dotnet  new classlib -n 项目名称
+
