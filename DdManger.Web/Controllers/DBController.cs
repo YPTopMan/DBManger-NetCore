@@ -38,7 +38,6 @@ namespace DdManger.Web.Controllers
             return View(list);
         }
 
-
         /// <summary>
         /// 获得表
         /// </summary>
@@ -55,7 +54,7 @@ namespace DdManger.Web.Controllers
             //var list = db.Ado.SqlQuery<TableViewModel>(sql).ToList();
 
             var list = new List<TableViewModel>();
-            list.Add(new TableViewModel { Name = "aa", Rows = 123, d = "few" });
+            list.Add(new TableViewModel { Name = "aa", Rows = 123, Description = "few" });
 
             return View(list);
         }
@@ -93,7 +92,6 @@ namespace DdManger.Web.Controllers
         [HttpPost]
         public IActionResult EditTableDescription(string table, string d)
         {
-
             db.Ado.ExecuteCommand("EXECUTE sp_addextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, NULL, NULL", new { table = "", d = "" });
 
             return View();

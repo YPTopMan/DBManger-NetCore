@@ -7,27 +7,26 @@ using System.Threading.Tasks;
 namespace DdManger.Web.Models
 {
     /// <summary>
-    /// 表视图模型
+    /// 
     /// </summary>
-    public class TableViewModel
+    public class DBLoginViewModel
     {
         /// <summary>
-        /// 表名
+        /// 地址
         /// </summary>
-        [Display(Name = "表名")]
+        [Display(Name = "地址")]
+        public string Address { get; set; }
+
+        /// <summary>
+        /// 登录名
+        /// </summary>
+        [Display(Name = "登录名")]
         public string Name { get; set; }
 
         /// <summary>
-        /// 行数
+        /// 登录密码
         /// </summary>
-        [Display(Name = "行数")]
-        public int Rows { get; set; }
-
-        /// <summary>
-        /// 表描述
-        /// </summary>
-
-        [Display(Name = "表描述")]
-        public string Description { get; set; }
+        [Display(Name = "登录密码")]
+        public string Password { get; set; }
     }
 }

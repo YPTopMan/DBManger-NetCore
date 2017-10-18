@@ -13,7 +13,7 @@
                 @Html.DisplayNameFor(model => model.Rows)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.d)
+                @Html.DisplayNameFor(model => model.Description)
             </th>
             <th></th>
         </tr>
@@ -27,31 +27,9 @@
                 IsAutoCloseConnection = true,
                 InitKeyType = InitKeyType.SystemTable
             });
-        }
-        @foreach (var item in Model)
-            {
-            <tr>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Name)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Rows)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.d)
-                </td>
-                <td>
-                    @Html.ActionLink("Edit", "Edit", new { /* id=item.PrimaryKey */ }) |
-                    @Html.ActionLink("Details", "Details", new { /* id=item.PrimaryKey */ }) |
-                    @Html.ActionLink("Delete", "Delete", new { /* id=item.PrimaryKey */ })
-                </td>
-            </tr>
-                <tr><td>列名</td><td>列注释</td></tr>
-                <tr>
-                    <td colspan="10">
-                        <h3>
-                            @{
-                                var sql = @"SELECT a.colorder 字段序号,a.name  ColumnName,
+
+
+            var sql = @"SELECT a.colorder 字段序号,a.name  ColumnName,
 (case when COLUMNPROPERTY( a.id,a.name,'IsIdentity')=1 then '√'else '' end) IsIdentity,
 (case when (SELECT count(*) FROM sysobjects  WHERE (name in (SELECT name FROM sysindexes
 WHERE (id = a.id) AND (indid in  (SELECT indid FROM sysindexkeys  WHERE (id = a.id) AND (colid in  (SELECT colid FROM syscolumns WHERE (id = a.id) AND (name = a.name)))))))  AND (xtype = 'PK'))>0 then '√' else '' end) IsPk,
@@ -67,17 +45,59 @@ left join sys.extended_properties f on d.id=f.class and f.minor_id=0
 where b.name is not null and d.name=@tableName
 order by a.id,a.colorder";
 
-                                var tcList = db.Ado.SqlQuery<TableColumnsViewModel>(sql, new SugarParameter("@tableName", item.Name)).ToList();
+        }
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Name)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Rows)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Description)
+                </td>
+                <td>
+                    @Html.ActionLink("Edit", "Edit", new { /* id=item.PrimaryKey */ }) |
+                    @Html.ActionLink("Details", "Details", new { /* id=item.PrimaryKey */ }) |
+                    @Html.ActionLink("Delete", "Delete", new { /* id=item.PrimaryKey */ })
+                </td>
+            </tr>
+            <tr>
+                <td>列注释</td>
+                <td>列名</td>
+                <td>类型</td>
+                <td>是否为主键</td>
+                <td>是否标识列</td>
+                <td>允许空</td>
+                <td>默认值</td>
+                <td>占用字节数</td>
+                <td>精度</td>
+                <td>小数位数</td>
+            </tr>
+            <tr>
+                <td colspan="10">                  
+                        @{
+                            var tcList = db.Ado.SqlQuery<TableColumnsViewModel>(sql, new SugarParameter("@tableName", item.Name)).ToList();
 
 
-                                foreach (var currentTC in tcList)
-                                {
-                                    <span>@(currentTC.ColumnName)</span>
-                                }
+                            foreach (var currentTC in tcList)
+                            {
+                            <tr>                       
+                            <td>@currentTC.Explain</td>
+                             <td>@(currentTC.ColumnName)</td>
+                        <td>@(currentTC.ColumnType)</td>
+                        <td>@(currentTC.IsPk)</td>
+                        <td>@(currentTC.IsIdentity)</td>
+                        <td>@(currentTC.IsNullable)</td>
+                        <td>@(currentTC.DefaultValue)</td>
+                              </tr>
                             }
-                        </h3>
-                    </td>
-                </tr>
-                                }
+                        }
+                     
+                        </td>
+                        </tr>
+                            }
     </tbody>
 </table>

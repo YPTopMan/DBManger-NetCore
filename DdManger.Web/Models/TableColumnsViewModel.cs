@@ -11,10 +11,21 @@ namespace DdManger.Web.Models
     /// </summary>
     public class TableColumnsViewModel
     {
+
+        /// <summary>
+        /// 说明
+        /// </summary>
+        public string Explain { get; set; }
+
         /// <summary>
         /// 列名
         /// </summary>
         public string ColumnName { get; set; }
+
+        /// <summary>
+        /// 类型
+        /// </summary>
+        public string ColumnType { get; set; }
 
         /// <summary>
         /// 是否为主键
@@ -31,12 +42,10 @@ namespace DdManger.Web.Models
         /// </summary>
         public string IsNullable { get; set; }
 
-
         /// <summary>
-        /// 类型
+        /// 默认值
         /// </summary>
-        public string ColumnType { get; set; }
-
+        public string DefaultValue { get; set; }
 
         /// <summary>
         /// 占用字节数
@@ -53,15 +62,7 @@ namespace DdManger.Web.Models
         /// </summary>
         public string DecimalDigits { get; set; }
 
-        /// <summary>
-        /// 默认值
-        /// </summary>
-        public string DefaultValue { get; set; }
 
-        /// <summary>
-        /// 说明
-        /// </summary>
-        public string Explain { get; set; }
     }
 
 }
