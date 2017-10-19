@@ -15,10 +15,20 @@ namespace DdManger.Web.Controllers
     {
         SqlSugarClient db = null;
 
+
+        public DBController() {
+
+           
+        }
+
+
+
+        //private 
+
         //  SqlSugarClient db = new SqlSugarClient(null);
 
         public IActionResult Index()
-        {
+        {            
             return View();
         }
 

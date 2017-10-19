@@ -38,10 +38,32 @@
         </div>
     </nav>
     <div class="container body-content">
+        <a href="/db/LockTables">获得所有被锁定的表</a>
+        @{
+
+            var dbAddress = Context.Request.Cookies["dbAddress"];
+
+            if (!string.IsNullOrEmpty(dbAddress)) { 
+            var strArray = dbAddress.Split(',');
+
+            for (int i = 0; i < strArray.Length; i++)
+            {
+                var currentStr = strArray[i];
+                var currentStrArray = currentStr.Split('|');
+                @(currentStrArray[0]) @(currentStrArray[1]) @(i) <br />
+
+                <a href="/db/GetTables?dbName="@("1111")>ffff</a>
+                 
+                <br />
+              
+                }
+            }
+        }
+
         @RenderBody()
         <hr />
         <footer>
-            <p>&copy; 2017 - DdManger.Web</p>
+            <p>&copy; 2017 - 数据库管理文档</p>
         </footer>
     </div>
 

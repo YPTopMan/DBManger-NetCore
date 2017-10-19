@@ -59,6 +59,7 @@ order by a.id,a.colorder";
                     @Html.DisplayFor(modelItem => item.Description)
                 </td>
                 <td>
+                <td><a href="EditTableDescription?table=@(item.Name)">修改表注释</a></td>
                     @Html.ActionLink("Edit", "Edit", new { /* id=item.PrimaryKey */ }) |
                     @Html.ActionLink("Details", "Details", new { /* id=item.PrimaryKey */ }) |
                     @Html.ActionLink("Delete", "Delete", new { /* id=item.PrimaryKey */ })
@@ -81,7 +82,6 @@ order by a.id,a.colorder";
                         @{
                             var tcList = db.Ado.SqlQuery<TableColumnsViewModel>(sql, new SugarParameter("@tableName", item.Name)).ToList();
 
-
                             foreach (var currentTC in tcList)
                             {
                             <tr>                       
@@ -92,6 +92,7 @@ order by a.id,a.colorder";
                         <td>@(currentTC.IsIdentity)</td>
                         <td>@(currentTC.IsNullable)</td>
                         <td>@(currentTC.DefaultValue)</td>
+                                <td><a href="EditTableCDescription?table=@(item.Name)&column=@(currentTC.ColumnName)">修改表注释</a></td>
                               </tr>
                             }
                         }
