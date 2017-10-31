@@ -13,19 +13,17 @@ namespace DdManger.Web.Controllers
     /// </summary>
     public class DBController : Controller
     {
-        SqlSugarClient db = null;
-
+       SqlSugarClient db = new SqlSugarClient(new ConnectionConfig()
+        {
+            ConnectionString = "Data Source=.;Initial Catalog=a;Persist Security Info=True;User ID=sa;pwd=sa", //必填
+            DbType = DbType.SqlServer,
+            IsAutoCloseConnection = true,
+            InitKeyType = InitKeyType.SystemTable
+        });
 
         public DBController() {
-
            
-        }
-
-
-
-        //private 
-
-        //  SqlSugarClient db = new SqlSugarClient(null);
+        } 
 
         public IActionResult Index()
         {            
@@ -38,13 +36,9 @@ namespace DdManger.Web.Controllers
         /// <returns></returns>
         public IActionResult GetDataBase()
         {
-            var list = new List<DbViewModel>();
-
-            list.Add(new DbViewModel { FileName = "fefwe", Name = "fewfwe" });
-            list.Add(new DbViewModel { FileName = "fefwe22", Name = "fewfwe222" });
-            //list = db.Ado.SqlQuery<DbViewModel>("SELECT name,filename FROM Master..SysDatabases ORDER BY Name")
-            //    .ToList();
-
+            var list = new List<DbViewModel>();      
+            list = db.Ado.SqlQuery<DbViewModel>("SELECT name,filename FROM Master..SysDatabases ORDER BY Name")
+            .ToList();
             return View(list);
         }
 
@@ -56,16 +50,12 @@ namespace DdManger.Web.Controllers
         public IActionResult GetTables(string dbName)
         {
             //  --查询数据库中所有的表名及行数
-            //var sql = @"SELECT a.name, b.rows FROM sysobjects AS a
-            //        INNER JOIN sysindexes AS b ON a.id = b.id
-            //        WHERE(a.type = 'u') AND(b.indid IN(0, 1))
-            //        ORDER BY a.name,b.rows DESC";
+            var sql = @"SELECT a.name, b.rows FROM sysobjects AS a
+                    INNER JOIN sysindexes AS b ON a.id = b.id
+                  WHERE(a.type = 'u') AND(b.indid IN(0, 1))
+                   ORDER BY a.name,b.rows DESC";
 
-            //var list = db.Ado.SqlQuery<TableViewModel>(sql).ToList();
-
-            var list = new List<TableViewModel>();
-            list.Add(new TableViewModel { Name = "aa", Rows = 123, Description = "few" });
-
+            var list = db.Ado.SqlQuery<TableViewModel>(sql).ToList();
             return View(list);
         }
 
@@ -128,7 +118,9 @@ namespace DdManger.Web.Controllers
         /// <returns></returns>
         [HttpPost]
         public IActionResult EditTableCDescription(string table, string column, string description)
-        {            // sqlserver用语句给表的“字段”注释
+        {            
+        
+            // sqlserver用语句给表的“字段”注释
             db.Ado.ExecuteCommand("EXECUTE sp_addextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, N'column',@cName", new { table = "TestDBName", cName = "Id", d = "XXX" });
 
             return View();
