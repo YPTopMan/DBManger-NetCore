@@ -1,22 +1,13 @@
 ﻿@using SqlSugar
 @model IEnumerable<DdManger.Web.Models.TableViewModel>
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
+   <style>
+        tr:hover {        
+        background-color: #C7EDCC;
+        }
+    </style>
+    
 <table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Name)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Rows)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Description)
-            </th>
-            <th></th>
-        </tr>
+    <thead>    
     </thead>
     <tbody>
         @{
@@ -49,15 +40,28 @@ order by a.id,a.colorder";
         @foreach (var item in Model)
         {
             <tr>
+             <th>
+                @Html.DisplayNameFor(model => model.Description)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Name)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Rows)
+            </th>
+          
+            <th></th>
+        </tr>                    
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Description)
+                </td>
                 <td>
                     @Html.DisplayFor(modelItem => item.Name)
                 </td>
                 <td>
                     @Html.DisplayFor(modelItem => item.Rows)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Description)
-                </td>
+                </td>            
                 <td>
                 <td><a href="EditTableDescription?table=@(item.Name)">修改表注释</a></td>
                     @Html.ActionLink("Edit", "Edit", new { /* id=item.PrimaryKey */ }) |
