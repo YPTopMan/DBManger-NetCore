@@ -50,10 +50,11 @@ namespace DdManger.Web.Controllers
         public IActionResult GetTables(string dbName)
         {
             //  --查询数据库中所有的表名及行数
-            var sql = @"SELECT a.name, b.rows FROM sysobjects AS a
-                    INNER JOIN sysindexes AS b ON a.id = b.id
-                  WHERE(a.type = 'u') AND(b.indid IN(0, 1))
-                   ORDER BY a.name,b.rows DESC";
+             var sql = @" SELECT a.id,a.name, b.rows,c.value as description  FROM sysobjects AS a 
+                        left JOIN sysindexes AS b ON a.id = b.id
+                        left join sys.extended_properties c on a.id=c.major_id and minor_id=0 
+                        WHERE (a.type = 'u') AND (b.indid IN (0, 1))  
+                        ORDER BY a.name,b.rows DESC";
 
             var list = db.Ado.SqlQuery<TableViewModel>(sql).ToList();
             return View(list);
@@ -80,8 +81,15 @@ namespace DdManger.Web.Controllers
         [HttpGet]
         public IActionResult EditTableDescription(string table)
         {
+           var sql = @" SELECT a.id,a.name, b.rows,c.value as description  FROM sysobjects AS a 
+                        left JOIN sysindexes AS b ON a.id = b.id
+                        left join sys.extended_properties c on a.id=c.major_id and minor_id=0 
+                        WHERE (a.type = 'u') AND (b.indid IN (0, 1))  and a.name=@tableName
+                        ORDER BY a.name,b.rows DESC";
 
-            return View();
+            var firstTable = db.Ado.SqlQuery<TableViewModel>(sql, new { tableName = table }).First();
+            
+            return View(firstTable);
         }
 
         /// <summary>
@@ -107,7 +115,24 @@ namespace DdManger.Web.Controllers
         [HttpGet]
         public IActionResult EditTableCDescription(string table, string column)
         {
-            return View();
+                    var sql = @"SELECT a.colorder 字段序号,a.name  ColumnName,
+        (case when COLUMNPROPERTY( a.id,a.name,'IsIdentity')=1 then '√'else '' end) IsIdentity,
+        (case when (SELECT count(*) FROM sysobjects  WHERE (name in (SELECT name FROM sysindexes
+        WHERE (id = a.id) AND (indid in  (SELECT indid FROM sysindexkeys  WHERE (id = a.id) AND (colid in  (SELECT colid FROM syscolumns WHERE (id = a.id) AND (name = a.name)))))))  AND (xtype = 'PK'))>0 then '√' else '' end) IsPk,
+        b.name  ColumnType,a.length  ByteLength ,
+        COLUMNPROPERTY(a.id,a.name,'PRECISION') as [Precision],  isnull(COLUMNPROPERTY(a.id,a.name,'Scale'),0) as  decimalDigits,
+        (case when a.isnullable=1 then '√'else '' end)  isnullable,isnull(e.text,'')  defaultValue,isnull(g.[value], ' ') AS [explain]
+        FROM  syscolumns a
+        left join systypes b on a.xtype=b.xusertype
+        inner join sysobjects d on a.id=d.id and d.xtype='U' and d.name<>'dtproperties'
+        left join syscomments e on a.cdefault=e.id
+        left join sys.extended_properties g on a.id=g.major_id AND a.colid=g.minor_id
+        left join sys.extended_properties f on d.id=f.class and f.minor_id=0
+        where b.name is not null and d.name=@tableName and a.name=@columnName   
+        order by a.id,a.colorder";
+
+            var firstModel = db.Ado.SqlQuery<TableColumnsViewModel>(sql, new { tableName=table, columnName = column}).First();
+            return View(firstModel);
         }
 
         /// <summary>
