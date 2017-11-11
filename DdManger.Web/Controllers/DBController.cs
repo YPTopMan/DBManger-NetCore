@@ -13,7 +13,7 @@ namespace DdManger.Web.Controllers
     /// </summary>
     public class DBController : Controller
     {
-       SqlSugarClient db = new SqlSugarClient(new ConnectionConfig()
+        SqlSugarClient db = new SqlSugarClient(new ConnectionConfig()
         {
             ConnectionString = "Data Source=.;Initial Catalog=a;Persist Security Info=True;User ID=sa;pwd=sa", //必填
             DbType = DbType.SqlServer,
@@ -21,12 +21,13 @@ namespace DdManger.Web.Controllers
             InitKeyType = InitKeyType.SystemTable
         });
 
-        public DBController() {
-           
-        } 
+        public DBController()
+        {
+
+        }
 
         public IActionResult Index()
-        {            
+        {
             return View();
         }
 
@@ -36,7 +37,7 @@ namespace DdManger.Web.Controllers
         /// <returns></returns>
         public IActionResult GetDataBase()
         {
-            var list = new List<DbViewModel>();      
+            var list = new List<DbViewModel>();
             list = db.Ado.SqlQuery<DbViewModel>("SELECT name,filename FROM Master..SysDatabases ORDER BY Name")
             .ToList();
             return View(list);
@@ -50,7 +51,7 @@ namespace DdManger.Web.Controllers
         public IActionResult GetTables(string dbName)
         {
             //  --查询数据库中所有的表名及行数
-             var sql = @" SELECT a.id,a.name, b.rows,c.value as description  FROM sysobjects AS a 
+            var sql = @" SELECT a.id,a.name, b.rows,c.value as description  FROM sysobjects AS a 
                         left JOIN sysindexes AS b ON a.id = b.id
                         left join sys.extended_properties c on a.id=c.major_id and minor_id=0 
                         WHERE (a.type = 'u') AND (b.indid IN (0, 1))  
@@ -81,14 +82,14 @@ namespace DdManger.Web.Controllers
         [HttpGet]
         public IActionResult EditTableDescription(string table)
         {
-           var sql = @" SELECT a.id,a.name, b.rows,c.value as description  FROM sysobjects AS a 
+            var sql = @" SELECT a.id,a.name, b.rows,c.value as description  FROM sysobjects AS a 
                         left JOIN sysindexes AS b ON a.id = b.id
                         left join sys.extended_properties c on a.id=c.major_id and minor_id=0 
                         WHERE (a.type = 'u') AND (b.indid IN (0, 1))  and a.name=@tableName
                         ORDER BY a.name,b.rows DESC";
 
             var firstTable = db.Ado.SqlQuery<TableViewModel>(sql, new { tableName = table }).First();
-            
+
             return View(firstTable);
         }
 
@@ -98,9 +99,9 @@ namespace DdManger.Web.Controllers
         /// <param name="table"></param>
         /// <returns></returns>
         [HttpPost]
-        public IActionResult EditTableDescription(string table, string d)
+        public IActionResult EditTableDescription(TableViewModel viewModel)
         {
-            db.Ado.ExecuteCommand("EXECUTE sp_addextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, NULL, NULL", new { table = "", d = "" });
+            db.Ado.ExecuteCommand("EXECUTE sp_updateextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, NULL, NULL", new { table = viewModel.Name, d = viewModel.Description });
 
             return View();
         }
@@ -115,7 +116,7 @@ namespace DdManger.Web.Controllers
         [HttpGet]
         public IActionResult EditTableCDescription(string table, string column)
         {
-                    var sql = @"SELECT a.colorder 字段序号,a.name  ColumnName,
+            var sql = @"SELECT a.colorder 字段序号,a.name  ColumnName,
         (case when COLUMNPROPERTY( a.id,a.name,'IsIdentity')=1 then '√'else '' end) IsIdentity,
         (case when (SELECT count(*) FROM sysobjects  WHERE (name in (SELECT name FROM sysindexes
         WHERE (id = a.id) AND (indid in  (SELECT indid FROM sysindexkeys  WHERE (id = a.id) AND (colid in  (SELECT colid FROM syscolumns WHERE (id = a.id) AND (name = a.name)))))))  AND (xtype = 'PK'))>0 then '√' else '' end) IsPk,
@@ -131,7 +132,7 @@ namespace DdManger.Web.Controllers
         where b.name is not null and d.name=@tableName and a.name=@columnName   
         order by a.id,a.colorder";
 
-            var firstModel = db.Ado.SqlQuery<TableColumnsViewModel>(sql, new { tableName=table, columnName = column}).First();
+            var firstModel = db.Ado.SqlQuery<TableColumnsViewModel>(sql, new { tableName = table, columnName = column }).First();
             return View(firstModel);
         }
 
@@ -142,11 +143,11 @@ namespace DdManger.Web.Controllers
         /// <param name="column"></param>
         /// <returns></returns>
         [HttpPost]
-        public IActionResult EditTableCDescription(string table, string column, string description)
-        {            
-        
+        public IActionResult EditTableCDescription(TableColumnsViewModel viewModel)
+        {
+
             // sqlserver用语句给表的“字段”注释
-            db.Ado.ExecuteCommand("EXECUTE sp_addextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, N'column',@cName", new { table = "TestDBName", cName = "Id", d = "XXX" });
+            db.Ado.ExecuteCommand("EXECUTE sp_updateextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, N'column',@cName", new { table = viewModel.TableName, cName = viewModel.ColumnName, d = viewModel.Explain });
 
             return View();
         }

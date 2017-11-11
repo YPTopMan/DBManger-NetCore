@@ -1,0 +1,69 @@
+﻿@model DdManger.Web.Models.TableColumnsViewModel
+
+<h4>TableColumnsViewModel</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="EditTableCDescription">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="Explain" class="control-label"></label>
+                <input asp-for="Explain" class="form-control" />
+                <span asp-validation-for="Explain" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ColumnName" class="control-label"></label>
+                <input asp-for="ColumnName" class="form-control" />
+                <span asp-validation-for="ColumnName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ColumnType" class="control-label"></label>
+                <input asp-for="ColumnType" class="form-control" />
+                <span asp-validation-for="ColumnType" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="IsPk" class="control-label"></label>
+                <input asp-for="IsPk" class="form-control" />
+                <span asp-validation-for="IsPk" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="IsIdentity" class="control-label"></label>
+                <input asp-for="IsIdentity" class="form-control" />
+                <span asp-validation-for="IsIdentity" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="IsNullable" class="control-label"></label>
+                <input asp-for="IsNullable" class="form-control" />
+                <span asp-validation-for="IsNullable" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="DefaultValue" class="control-label"></label>
+                <input asp-for="DefaultValue" class="form-control" />
+                <span asp-validation-for="DefaultValue" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ByteLength" class="control-label"></label>
+                <input asp-for="ByteLength" class="form-control" />
+                <span asp-validation-for="ByteLength" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Precision" class="control-label"></label>
+                <input asp-for="Precision" class="form-control" />
+                <span asp-validation-for="Precision" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="DecimalDigits" class="control-label"></label>
+                <input asp-for="DecimalDigits" class="form-control" />
+                <span asp-validation-for="DecimalDigits" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-default" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+

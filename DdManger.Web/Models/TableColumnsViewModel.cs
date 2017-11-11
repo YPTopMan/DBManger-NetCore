@@ -13,6 +13,11 @@ namespace DdManger.Web.Models
     {
 
         /// <summary>
+        /// 表名
+        /// </summary>
+        public string TableName { get; set; }
+
+        /// <summary>
         /// 说明
         /// </summary>
         public string Explain { get; set; }
