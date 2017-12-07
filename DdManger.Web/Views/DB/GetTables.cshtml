@@ -1,46 +1,9 @@
 ﻿@using SqlSugar
 @model IEnumerable<DdManger.Web.Models.TableViewModel>
-   <style>
-        tr:hover {        
-        background-color: #C7EDCC;
-        }
-    </style>
-    
 <table class="table">
-    <thead>    
-    </thead>
-    <tbody>
-        @{
-            var db = new SqlSugarClient(new ConnectionConfig()
-            {
-                ConnectionString = "Data Source=192.168.0.188;Initial Catalog=zlzx20170914;Persist Security Info=True;User ID=sa;pwd=sa", //必填
-                DbType = DbType.SqlServer,
-                IsAutoCloseConnection = true,
-                InitKeyType = InitKeyType.SystemTable
-            });
-
-
-            var sql = @"SELECT a.colorder 字段序号,a.name  ColumnName,
-(case when COLUMNPROPERTY( a.id,a.name,'IsIdentity')=1 then '√'else '' end) IsIdentity,
-(case when (SELECT count(*) FROM sysobjects  WHERE (name in (SELECT name FROM sysindexes
-WHERE (id = a.id) AND (indid in  (SELECT indid FROM sysindexkeys  WHERE (id = a.id) AND (colid in  (SELECT colid FROM syscolumns WHERE (id = a.id) AND (name = a.name)))))))  AND (xtype = 'PK'))>0 then '√' else '' end) IsPk,
-b.name  ColumnType,a.length  ByteLength ,
-COLUMNPROPERTY(a.id,a.name,'PRECISION') as [Precision],  isnull(COLUMNPROPERTY(a.id,a.name,'Scale'),0) as  decimalDigits,
-(case when a.isnullable=1 then '√'else '' end)  isnullable,isnull(e.text,'')  defaultValue,isnull(g.[value], ' ') AS [explain]
-FROM  syscolumns a
-left join systypes b on a.xtype=b.xusertype
-inner join sysobjects d on a.id=d.id and d.xtype='U' and d.name<>'dtproperties'
-left join syscomments e on a.cdefault=e.id
-left join sys.extended_properties g on a.id=g.major_id AND a.colid=g.minor_id
-left join sys.extended_properties f on d.id=f.class and f.minor_id=0
-where b.name is not null and d.name=@tableName
-order by a.id,a.colorder";
-
-        }
-        @foreach (var item in Model)
-        {
-            <tr>
-             <th>
+    <thead>
+        <tr>
+            <th>
                 @Html.DisplayNameFor(model => model.Description)
             </th>
             <th>
@@ -49,60 +12,29 @@ order by a.id,a.colorder";
             <th>
                 @Html.DisplayNameFor(model => model.Rows)
             </th>
-          
-            <th></th>
-        </tr>                    
-            <tr>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Description)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Name)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Rows)
-                </td>            
-                <td>
-                <td><a href="EditTableDescription?table=@(item.Name)">修改表注释</a></td>
-                    @Html.ActionLink("Edit", "Edit", new { /* id=item.PrimaryKey */ }) |
-                    @Html.ActionLink("Details", "Details", new { /* id=item.PrimaryKey */ }) |
-                    @Html.ActionLink("Delete", "Delete", new { /* id=item.PrimaryKey */ })
-                </td>
-            </tr>
-            <tr>
-                <td>列注释</td>
-                <td>列名</td>
-                <td>类型</td>
-                <td>是否为主键</td>
-                <td>是否标识列</td>
-                <td>允许空</td>
-                <td>默认值</td>
-                <td>占用字节数</td>
-                <td>精度</td>
-                <td>小数位数</td>
-            </tr>
-            <tr>
-                <td colspan="10">                  
-                        @{
-                            var tcList = db.Ado.SqlQuery<TableColumnsViewModel>(sql, new SugarParameter("@tableName", item.Name)).ToList();
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Description)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Name)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Rows)
+            </td>
+            <td>
+            <td>
+                <a href="EditTableDescription?table=@(item.Name)">修改表注释</a>
+                <a href="GetColumns?table=@(item.Name)">查看表列</a>
+            </td>           
 
-                            foreach (var currentTC in tcList)
-                            {
-                            <tr>                       
-                            <td>@currentTC.Explain</td>
-                             <td>@(currentTC.ColumnName)</td>
-                        <td>@(currentTC.ColumnType)</td>
-                        <td>@(currentTC.IsPk)</td>
-                        <td>@(currentTC.IsIdentity)</td>
-                        <td>@(currentTC.IsNullable)</td>
-                        <td>@(currentTC.DefaultValue)</td>
-                                <td><a href="EditTableCDescription?table=@(item.Name)&column=@(currentTC.ColumnName)">修改表注释</a></td>
-                              </tr>
-                            }
-                        }
-                     
-                        </td>
-                        </tr>
-                            }
+        </tr>
+        }
     </tbody>
 </table>

@@ -1,0 +1,87 @@
+﻿@model IEnumerable<DdManger.Web.Models.TableColumnsViewModel>
+
+@{
+    ViewData["Title"] = "GetColumns";
+}
+<table class="table">
+    <thead>
+        <tr>
+                <th>
+                    @Html.DisplayNameFor(model => model.TableName)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Explain)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.ColumnName)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.ColumnType)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.IsPk)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.IsIdentity)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.IsNullable)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.DefaultValue)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.ByteLength)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Precision)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.DecimalDigits)
+                </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.TableName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Explain)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.ColumnName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.ColumnType)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IsPk)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IsIdentity)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IsNullable)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.DefaultValue)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.ByteLength)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Precision)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.DecimalDigits)
+            </td>
+            <td>
+                <a href="EditTableCDescription?table=@(item.TableName)&column=@(item.ColumnName)">修改表注释</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

@@ -1,8 +1,4 @@
 ﻿@model IEnumerable<DdManger.Web.Models.DbViewModel>
-
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
 <table class="table">
     <thead>
         <tr>
@@ -24,10 +20,8 @@
             <td>
                 @Html.DisplayFor(modelItem => item.FileName)
             </td>
-            <td>
-                @Html.ActionLink("Edit", "Edit", new { /* id=item.PrimaryKey */ }) |
-                @Html.ActionLink("Details", "Details", new { /* id=item.PrimaryKey */ }) |
-                @Html.ActionLink("Delete", "Delete", new { /* id=item.PrimaryKey */ })
+            <td>            
+                @Html.ActionLink("详情", "GetTables", new { dbName = item.Name })              
             </td>
         </tr>
 }

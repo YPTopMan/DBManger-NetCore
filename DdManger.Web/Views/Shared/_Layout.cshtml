@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - DdManger.Web</title>
+    <title>@ViewData["Title"] - 数据库在线文档</title>
 
     <environment include="Development">
         <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
@@ -15,6 +15,21 @@
               asp-fallback-test-class="sr-only" asp-fallback-test-property="position" asp-fallback-test-value="absolute" />
         <link rel="stylesheet" href="~/css/site.min.css" asp-append-version="true" />
     </environment>
+    <style>
+        tr {
+            height: 20px;
+            line-height: 20px;
+        }
+
+        td {
+            height: 20px;
+            line-height: 20px;
+        }
+
+        tr:hover {
+            background-color: #C7EDCC;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-inverse navbar-fixed-top">
@@ -44,19 +59,20 @@
 
             var dbAddress = Context.Request.Cookies["dbAddress"];
 
-            if (!string.IsNullOrEmpty(dbAddress)) { 
-            var strArray = dbAddress.Split(',');
-
-            for (int i = 0; i < strArray.Length; i++)
+            if (!string.IsNullOrEmpty(dbAddress))
             {
-                var currentStr = strArray[i];
-                var currentStrArray = currentStr.Split('|');
-                @(currentStrArray[0]) @(currentStrArray[1]) @(i) <br />
+                var strArray = dbAddress.Split(',');
 
-                <a href="/db/GetTables?dbName="@("1111")>ffff</a>
-                 
-                <br />
-              
+                for (int i = 0; i < strArray.Length; i++)
+                {
+                    var currentStr = strArray[i];
+                    var currentStrArray = currentStr.Split('|');
+                    @(currentStrArray[0]) @(currentStrArray[1]) @(i) <br />
+
+                    <a href="/db/GetTables?dbName=" @("1111")>ffff</a>
+
+                    <br />
+
                 }
             }
         }
