@@ -160,6 +160,7 @@ order by a.id,a.colorder";
         order by a.id,a.colorder";
 
             var firstModel = db.Ado.SqlQuery<TableColumnsViewModel>(sql, new { tableName = table, columnName = column }).First();
+            firstModel.TableName = table;
             return View(firstModel);
         }
 
@@ -179,5 +180,14 @@ order by a.id,a.colorder";
             return View();
         }
 
+
+        /// <summary>
+        /// 所有未加注释的列
+        /// </summary>
+        /// <returns></returns>
+        public IActionResult AllNotExp()
+        {
+            return View();
+        }
     }
 }

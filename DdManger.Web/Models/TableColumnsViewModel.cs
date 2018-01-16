@@ -20,9 +20,9 @@ namespace DdManger.Web.Models
         public string TableName { get; set; }
 
         /// <summary>
-        /// 说明
+        /// 说明(注释)
         /// </summary>
-        [Display(Name = "说明")]
+        [Display(Name = "说明(注释)")]
         public string Explain { get; set; }
 
         /// <summary>

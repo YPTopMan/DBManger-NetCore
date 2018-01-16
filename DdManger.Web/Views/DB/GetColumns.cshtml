@@ -3,12 +3,10 @@
 @{
     ViewData["Title"] = "GetColumns";
 }
+
 <table class="table">
     <thead>
-        <tr>
-                <th>
-                    @Html.DisplayNameFor(model => model.TableName)
-                </th>
+        <tr>               
                 <th>
                     @Html.DisplayNameFor(model => model.Explain)
                 </th>
@@ -44,10 +42,7 @@
     </thead>
     <tbody>
 @foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.TableName)
-            </td>
+        <tr>        
             <td>
                 @Html.DisplayFor(modelItem => item.Explain)
             </td>
@@ -79,7 +74,7 @@
                 @Html.DisplayFor(modelItem => item.DecimalDigits)
             </td>
             <td>
-                <a href="EditTableCDescription?table=@(item.TableName)&column=@(item.ColumnName)">修改表注释</a>
+                <a href="EditTableCDescription?table=@(item.TableName)&column=@(item.ColumnName)">修改注释</a>
             </td>
         </tr>
 }
