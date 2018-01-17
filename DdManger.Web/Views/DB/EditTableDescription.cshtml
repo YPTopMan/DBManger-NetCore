@@ -1,21 +1,14 @@
 ﻿@model DdManger.Web.Models.TableViewModel
 
-<h4>修改表注释</h4>
+<h4>修改@(Model.Name)表注释，当前行数：@(Model.Rows)</h4>
+
+
 <hr />
 <div class="row">
     <div class="col-md-4">
         <form asp-action="EditTableDescription">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
-                <input asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Rows" class="control-label"></label>
-                <input asp-for="Rows" class="form-control" />
-                <span asp-validation-for="Rows" class="text-danger"></span>
-            </div>
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>   
+            <input asp-for="Name" type="hidden" />
             <div class="form-group">
                 <label asp-for="Description" class="control-label"></label>
                 <input asp-for="Description" class="form-control" />

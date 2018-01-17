@@ -15,8 +15,8 @@ namespace DdManger.Web.Controllers
     {
         SqlSugarClient db = new SqlSugarClient(new ConnectionConfig()
         {
-            ConnectionString= "server=192.168.0.188;uid=sa;pwd=sa;database=hms_dev",
-          //  ConnectionString = "Data Source=.;Initial Catalog=a;Persist Security Info=True;User ID=sa;pwd=sa", //必填
+            ConnectionString = "server=192.168.0.188;uid=sa;pwd=sa;database=hms_dev",
+            //  ConnectionString = "Data Source=.;Initial Catalog=a;Persist Security Info=True;User ID=sa;pwd=sa", //必填
             DbType = DbType.SqlServer,
             IsAutoCloseConnection = true,
             InitKeyType = InitKeyType.SystemTable
@@ -52,7 +52,7 @@ namespace DdManger.Web.Controllers
         public IActionResult GetTables(string dbName)
         {
             //  --查询数据库中所有的表名及行数
-            var sql = @" SELECT a.id,a.name, b.rows,c.value as description  FROM sysobjects AS a 
+            var sql = @" SELECT a.name Name, b.rows Rows,c.value as Description  FROM sysobjects AS a 
                         left JOIN sysindexes AS b ON a.id = b.id
                         left join sys.extended_properties c on a.id=c.major_id and minor_id=0 
                         WHERE (a.type = 'u') AND (b.indid IN (0, 1))  
@@ -67,7 +67,8 @@ namespace DdManger.Web.Controllers
         /// </summary>
         /// <param name="dbName">数据库名</param>
         /// <returns></returns>
-        public IActionResult GetColumns(string table) {
+        public IActionResult GetColumns(string table)
+        {
             var sql = @"SELECT d.name TableName,a.colorder 字段序号,a.name  ColumnName,
 (case when COLUMNPROPERTY( a.id,a.name,'IsIdentity')=1 then '√'else '' end) IsIdentity,
 (case when (SELECT count(*) FROM sysobjects  WHERE (name in (SELECT name FROM sysindexes
@@ -108,6 +109,17 @@ order by a.id,a.colorder";
         /// <returns></returns>
         [HttpGet]
         public IActionResult EditTableDescription(string table)
+        {     
+
+            return View(GetTableInfo(table));
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="table"></param>
+        /// <returns></returns>
+        public TableViewModel GetTableInfo(string table)
         {
             var sql = @" SELECT a.id,a.name, b.rows,c.value as description  FROM sysobjects AS a 
                         left JOIN sysindexes AS b ON a.id = b.id
@@ -115,10 +127,9 @@ order by a.id,a.colorder";
                         WHERE (a.type = 'u') AND (b.indid IN (0, 1))  and a.name=@tableName
                         ORDER BY a.name,b.rows DESC";
 
-            var firstTable = db.Ado.SqlQuery<TableViewModel>(sql, new { tableName = table }).First();
-
-            return View(firstTable);
+           return db.Ado.SqlQuery<TableViewModel>(sql, new { tableName = table }).First();
         }
+
 
         /// <summary>
         /// 修改表注释
@@ -128,9 +139,17 @@ order by a.id,a.colorder";
         [HttpPost]
         public IActionResult EditTableDescription(TableViewModel viewModel)
         {
-            db.Ado.ExecuteCommand("EXECUTE sp_updateextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, NULL, NULL", new { table = viewModel.Name, d = viewModel.Description });
+            var tableInfo=GetTableInfo(viewModel.Name);
+            if (string.IsNullOrEmpty(tableInfo.Description))
+            {
+                db.Ado.ExecuteCommand("EXECUTE sp_addextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, NULL, NULL", new { table = viewModel.Name, d = viewModel.Description });
+            }
+            else
+            {
+                db.Ado.ExecuteCommand("EXECUTE sp_updateextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, NULL, NULL", new { table = viewModel.Name, d = viewModel.Description });
+            }         
 
-            return View();
+            return View(tableInfo);
         }
 
 
@@ -142,6 +161,44 @@ order by a.id,a.colorder";
         /// <returns></returns>
         [HttpGet]
         public IActionResult EditTableCDescription(string table, string column)
+        {
+            var firstModel = GetColumnInfo(table, column);
+            firstModel.TableName = table;
+            return View(firstModel);
+        }
+
+        /// <summary>
+        /// 修改列注释
+        /// </summary>
+        /// <param name="table"></param>
+        /// <param name="column"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public IActionResult EditTableCDescription(TableColumnsViewModel viewModel)
+        {
+
+            var firstModel = GetColumnInfo(viewModel.TableName, viewModel.ColumnName);
+
+            if (string.IsNullOrEmpty(firstModel.Explain.Trim()))
+            {
+                db.Ado.ExecuteCommand("EXECUTE sp_addextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, N'column',@cName", new { table = viewModel.TableName, cName = viewModel.ColumnName, d = viewModel.Explain });
+            }
+            else
+            {
+                db.Ado.ExecuteCommand("EXECUTE sp_updateextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, N'column',@cName", new { table = viewModel.TableName, cName = viewModel.ColumnName, d = viewModel.Explain });
+            }      
+
+            return View(firstModel);
+        }
+
+
+        /// <summary>
+        /// 获得列信息
+        /// </summary>
+        /// <param name="table"></param>
+        /// <param name="column"></param>
+        /// <returns></returns>
+        public TableColumnsViewModel GetColumnInfo(string table, string column)
         {
             var sql = @"SELECT a.colorder 字段序号,a.name  ColumnName,
         (case when COLUMNPROPERTY( a.id,a.name,'IsIdentity')=1 then '√'else '' end) IsIdentity,
@@ -160,25 +217,9 @@ order by a.id,a.colorder";
         order by a.id,a.colorder";
 
             var firstModel = db.Ado.SqlQuery<TableColumnsViewModel>(sql, new { tableName = table, columnName = column }).First();
-            firstModel.TableName = table;
-            return View(firstModel);
+            return firstModel;
         }
 
-        /// <summary>
-        /// 修改列注释
-        /// </summary>
-        /// <param name="table"></param>
-        /// <param name="column"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public IActionResult EditTableCDescription(TableColumnsViewModel viewModel)
-        {
-
-            // sqlserver用语句给表的“字段”注释
-            db.Ado.ExecuteCommand("EXECUTE sp_updateextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, N'column',@cName", new { table = viewModel.TableName, cName = viewModel.ColumnName, d = viewModel.Explain });
-
-            return View();
-        }
 
 
         /// <summary>

@@ -24,10 +24,10 @@ namespace DdManger.Web.Models
         public int Rows { get; set; }
 
         /// <summary>
-        /// 表描述
+        /// 表描述(注释)
         /// </summary>
 
-        [Display(Name = "表描述")]
+        [Display(Name = "表描述(注释)")]
         public string Description { get; set; }
     }
 }
