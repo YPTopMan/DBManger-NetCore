@@ -40,6 +40,7 @@ namespace DdManger.Web.Controllers
         /// <returns></returns>
         public IActionResult GetTables(string dbName)
         {
+           // select * from TABLES
             var sql = @"show tables from " + dbName;
             var list = db.Ado.SqlQuery<string>(sql).ToList();
             return View(list);
@@ -52,9 +53,24 @@ namespace DdManger.Web.Controllers
         /// <returns></returns>
         public IActionResult GetColumns(string table)
         {            
+           //  // SELECT * from  COLUMNS 
             var sql = @" show columns from " + table;
             var list = db.Ado.SqlQuery<string>(sql).ToList();
             return Json(list, JsonRequestBehavior.AllowGet);
+        }
+        
+         /// <summary>
+        /// 修改列注释
+        /// </summary>
+        /// <param name="table"></param>
+        /// <param name="column"></param>
+        /// <param name="comment"></param>
+        /// <returns></returns>
+        public IActionResult EditColumns(string table, string column, string comment)
+        {
+            var sql = "alter table " + table + " modify column " + column + " int comment '" + comment + "'";
+            var result = db.Ado.ExecuteCommand(sql);
+            return Json(result, JsonRequestBehavior.AllowGet);
         }
     }
 }
