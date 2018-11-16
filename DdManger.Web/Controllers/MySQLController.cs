@@ -28,11 +28,9 @@ namespace DdManger.Web.Controllers
         /// </summary>
         /// <returns></returns>
         public IActionResult GetDataBase()
-        {
-            var list = new List<DbViewModel>();
-            list = db.Ado.SqlQuery<DbViewModel>("SELECT name,filename FROM Master..SysDatabases ORDER BY Name")
-            .ToList();
-            return View(list);
+        {           
+            var databases = db.Ado.SqlQuery<string>("show databases;").ToList();         
+            return View(databases);
         }
 
         /// <summary>
@@ -42,18 +40,21 @@ namespace DdManger.Web.Controllers
         /// <returns></returns>
         public IActionResult GetTables(string dbName)
         {
-            //  --查询数据库中所有的表名及行数
-            var sql = @" SELECT a.id,a.name, b.rows,c.value as description  FROM sysobjects AS a 
-                        left JOIN sysindexes AS b ON a.id = b.id
-                        left join sys.extended_properties c on a.id=c.major_id and minor_id=0 
-                        WHERE (a.type = 'u') AND (b.indid IN (0, 1))  
-                        ORDER BY a.name,b.rows DESC";
-
-            var list = db.Ado.SqlQuery<TableViewModel>(sql).ToList();
+            var sql = @"show tables from " + dbName;
+            var list = db.Ado.SqlQuery<string>(sql).ToList();
             return View(list);
         }
 
-
-
+        /// <summary>
+        /// 获得表中所有列
+        /// </summary>
+        /// <param name="dbName">数据库名</param>
+        /// <returns></returns>
+        public IActionResult GetColumns(string table)
+        {            
+            var sql = @" show columns from " + table;
+            var list = db.Ado.SqlQuery<string>(sql).ToList();
+            return Json(list, JsonRequestBehavior.AllowGet);
+        }
     }
 }
