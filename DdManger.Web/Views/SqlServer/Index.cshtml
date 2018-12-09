@@ -7,13 +7,14 @@
 @{
     SqlSugarClient db = new SqlSugarClient(new ConnectionConfig()
     {
-        ConnectionString = new ConfigHelper().Get<string>("mysql:ConnectionString"), //必填
+        ConnectionString = new ConfigHelper().Get<string>("sqlserver:ConnectionString"), //必填
         DbType = DbType.SqlServer,
         IsAutoCloseConnection = true,
         InitKeyType = InitKeyType.SystemTable
     });
 
     var isEdit = Convert.ToInt32(ViewBag.isEdit) == 1;
+    var dbName = new ConfigHelper().Get<string>("sqlserver:Db");
 
     //  --查询数据库中所有的表名及行数
     var sql = @" SELECT a.name Name, b.rows Rows,c.value as Description  FROM sysobjects AS a
