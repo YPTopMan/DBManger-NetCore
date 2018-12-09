@@ -5,30 +5,31 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 using DdManger.Web.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace DdManger.Web.Controllers
 {
     /// <summary>
     /// 数据库管理控制器
     /// </summary>
-    public class DBController : Controller
+    public class SqlServerController : Controller
     {
         SqlSugarClient db = new SqlSugarClient(new ConnectionConfig()
         {
-            ConnectionString = "server=192.168.0.188;uid=sa;pwd=sa;database=hms_dev",
-            //  ConnectionString = "Data Source=.;Initial Catalog=a;Persist Security Info=True;User ID=sa;pwd=sa", //必填
+            ConnectionString = new ConfigHelper().Get<string>("sqlserver:ConnectionString"),          
             DbType = DbType.SqlServer,
             IsAutoCloseConnection = true,
             InitKeyType = InitKeyType.SystemTable
         });
 
-        public DBController()
+        public SqlServerController()
         {
 
         }
 
-        public IActionResult Index()
+        public IActionResult Index(int isEdit = 0)
         {
+            ViewBag.isEdit = isEdit;
             return View();
         }
 
@@ -173,22 +174,24 @@ order by a.id,a.colorder";
         /// <param name="table"></param>
         /// <param name="column"></param>
         /// <returns></returns>
-        [HttpPost]
-        public IActionResult EditTableCDescription(TableColumnsViewModel viewModel)
+    
+        public int EditTableCDescription(TableColumnsViewModel viewModel)
         {
 
             var firstModel = GetColumnInfo(viewModel.TableName, viewModel.ColumnName);
 
+            var result = 0;
+
             if (string.IsNullOrEmpty(firstModel.Explain.Trim()))
             {
-                db.Ado.ExecuteCommand("EXECUTE sp_addextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, N'column',@cName", new { table = viewModel.TableName, cName = viewModel.ColumnName, d = viewModel.Explain });
+                result = db.Ado.ExecuteCommand("EXECUTE sp_addextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, N'column',@cName", new { table = viewModel.TableName, cName = viewModel.ColumnName, d = viewModel.Explain });
             }
             else
             {
-                db.Ado.ExecuteCommand("EXECUTE sp_updateextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, N'column',@cName", new { table = viewModel.TableName, cName = viewModel.ColumnName, d = viewModel.Explain });
+                result = db.Ado.ExecuteCommand("EXECUTE sp_updateextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, N'column',@cName", new { table = viewModel.TableName, cName = viewModel.ColumnName, d = viewModel.Explain });
             }      
 
-            return View(firstModel);
+            return result;
         }
 
 
@@ -220,6 +223,31 @@ order by a.id,a.colorder";
             return firstModel;
         }
 
+        /// <summary>
+        ///  保存列注释
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public JsonResult EditListColCommit(List<TableColumnsViewModel> list)
+        {
+            var rowResult = 0;
+            foreach (var item in list)
+            {
+                rowResult += EditTableCDescription(item);
+            }
+
+            return Json(rowResult);
+        }
+
+        /// <summary>
+        /// 保存列注释_单个
+        /// </summary>
+        public JsonResult EditSingleColCommit(TableColumnsViewModel item)
+        {
+            var result = EditTableCDescription(item);
+
+            return Json(result);
+        }
 
 
         /// <summary>

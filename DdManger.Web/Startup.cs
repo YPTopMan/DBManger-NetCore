@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using DdManger.Web.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -22,6 +23,8 @@ namespace DdManger.Web
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
+            services.AddOptions();           
+           // services.Configure<MySqlOptions>(Configuration.GetSection("sqlserver"));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

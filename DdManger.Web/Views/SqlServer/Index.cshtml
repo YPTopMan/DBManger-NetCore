@@ -1,0 +1,214 @@
+﻿@using SqlSugar
+@{
+    ViewData["Title"] = "Index";
+}
+<a asp-controller="db" asp-action="GetDataBase">获得所有库</a><br />
+<a asp-controller="db" asp-action="AllNotExp">所有还未加注释的列</a><br />
+@{
+    SqlSugarClient db = new SqlSugarClient(new ConnectionConfig()
+    {
+        ConnectionString = new ConfigHelper().Get<string>("mysql:ConnectionString"), //必填
+        DbType = DbType.SqlServer,
+        IsAutoCloseConnection = true,
+        InitKeyType = InitKeyType.SystemTable
+    });
+
+    var isEdit = Convert.ToInt32(ViewBag.isEdit) == 1;
+
+    //  --查询数据库中所有的表名及行数
+    var sql = @" SELECT a.name Name, b.rows Rows,c.value as Description  FROM sysobjects AS a
+left JOIN sysindexes AS b ON a.id = b.id
+left join sys.extended_properties c on a.id=c.major_id and minor_id=0
+WHERE (a.type = 'u') AND (b.indid IN (0, 1))
+ORDER BY a.name,b.rows DESC";
+
+    var tableList = db.Ado.SqlQuery<TableViewModel>(sql).ToList();
+
+
+    var sql1 = @"SELECT d.name TableName,a.colorder 字段序号,a.name  ColumnName,
+(case when COLUMNPROPERTY( a.id,a.name,'IsIdentity')=1 then '√'else '' end) IsIdentity,
+(case when (SELECT count(*) FROM sysobjects  WHERE (name in (SELECT name FROM sysindexes
+WHERE (id = a.id) AND (indid in  (SELECT indid FROM sysindexkeys  WHERE (id = a.id) AND (colid in  (SELECT colid FROM syscolumns WHERE (id = a.id) AND (name = a.name)))))))  AND (xtype = 'PK'))>0 then '√' else '' end) IsPk,
+b.name  ColumnType,a.length  ByteLength ,
+COLUMNPROPERTY(a.id,a.name,'PRECISION') as [Precision],  isnull(COLUMNPROPERTY(a.id,a.name,'Scale'),0) as  decimalDigits,
+(case when a.isnullable=1 then '√'else '' end)  isnullable,isnull(e.text,'')  defaultValue,isnull(g.[value], ' ') AS [explain]
+FROM  syscolumns a
+left join systypes b on a.xtype=b.xusertype
+inner join sysobjects d on a.id=d.id and d.xtype='U' and d.name<>'dtproperties'
+left join syscomments e on a.cdefault=e.id
+left join sys.extended_properties g on a.id=g.major_id AND a.colid=g.minor_id
+left join sys.extended_properties f on d.id=f.class and f.minor_id=0
+where b.name is not null  /* and d.name=@tableName*/
+order by a.id,a.colorder";
+
+    var tcList = db.Ado.SqlQuery<TableColumnsViewModel>(sql1).ToList();
+    var colsNotCom = tcList.Where(t => t.Explain == null).ToList();
+}
+
+@{
+    if (colsNotCom != null && colsNotCom.Any())
+    {
+        <div class="panel panel-danger">
+            <div class="panel-heading">未有注释的字段列表</div>
+            <table class="table">
+                <thead>
+                    <tr><th>表名</th><th>字段名</th><th>中文描述</th></tr>
+                </thead>
+                <tbody>
+                    @{
+                        for (int i = 0; i < colsNotCom.Count; i++)
+                        {
+                            var item = colsNotCom[i];
+
+                            <tr>
+                                <td>@item.TableName</td>
+                                <td>@item.ColumnName</td>
+                                <td>
+                                    <input type="hidden" name="list[@i].TableName" value="@item.TableName" />
+                                    <input type="hidden" name="list[@i].ColumnName" value="@item.ColumnName" />
+                                    <input type="text" name="list[@i].Explain" value="" />
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+            <div class="panel-footer">
+                <button type="button" class="btn btn-success">一键保存</button>
+            </div>
+        </div>
+
+    }
+}
+
+<p><label>是否启动编辑</label><input type="checkbox" id="inputIsEdit" onclick="isEdit()" /></p>
+
+
+<div class="panel panel-success">
+    <div class="panel-heading">表列表</div>
+    <table class="table">
+        <thead>
+            <tr><th>表注释</th><th>表名</th></tr>
+        </thead>
+        <tbody>
+            @{
+                foreach (var item in tableList)
+                {
+                    <tr>
+                        <td><a href="#tb_@item.Name">@item.Description</a></td>
+                        <td><a href="#tb_@item.Name">@item.Name</a></td>
+                        <td><a href="#tb_@item.Name">@item.Rows</a></td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@{
+    foreach (var item in tableList)
+    {
+        <div class="panel panel-default" id="tb_@item.Name">
+            <!-- Default panel contents -->
+            <div class="panel-heading">@item.Name（@item.Description）</div>
+            <!-- Table -->
+            <table class="table">
+                <thead>
+                    <tr><th>中文描述</th><th>字段名</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @{
+                        var tableCos = tcList.Where(t => t.TableName == item.Name).ToList();
+                        for (int i = 0; i < tableCos.Count; i++)
+                        {
+                            var currentCol = tableCos[i];
+
+                            <tr>
+                                <td>@currentCol.TableName</td>
+                                <td>@currentCol.ColumnName</td>
+                                <td>
+                                    <form>
+                                        <input type="hidden" name="list[@i].TableName" value="@currentCol.TableName" />
+                                        <input type="hidden" name="list[@i].ColumnName" value="@currentCol.ColumnName" />
+                                        <input type="text" name="list[@i].Explain" value="" />
+                                        <input type="button" value="更改注释" onclick="saveSignleCol(this)" />
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+    }
+}
+
+<div class="alert alert-danger" role="alert">...</div>
+
+
+@section Scripts{
+
+    <script>
+        // 保存未有注释的字段列表
+        function saveNotCol() {
+            var requestData = $("#notColComForm").serialize();
+
+            $.ajax({
+                type: "post",
+                url: "/SqlServer/EditListColCommit",
+                data: requestData,
+                success: function (data) {
+                    window.location.href = "/SqlServer";
+                }
+            });
+        }
+
+        // 保存当个注释
+        function saveSignleCol(obj) {
+            var $obj = $(obj);
+            var requestData = $obj.parent("form").serialize();
+            $.ajax({
+                type: "post",
+                url: "/SqlServer/EditSingleColCommit",
+                data: requestData,
+                success: function (data) {
+                    if (data == "0") {
+                        var newExplain = $obj.prev().val();
+                        $obj.parents("tr").children("td").eq(0).html("").html(newExplain);
+                    }
+                }
+            });
+        }
+
+
+        function isEdit() {
+
+            var isEdit = getQueryVariable("isEdit");
+            if (isEdit == "1") {
+                window.location.href = "/SqlServer";
+            } else {
+                window.location.href = "/SqlServer?isEdit=1";
+            }
+        }
+
+        function getQueryVariable(variable) {
+            var query = window.location.search.substring(1);
+            var vars = query.split("&");
+            for (var i = 0; i < vars.length; i++) {
+                var pair = vars[i].split("=");
+                if (pair[0] == variable) { return pair[1]; }
+            }
+            return (false);
+        }
+
+        $(function () {
+            var isEdit = getQueryVariable("isEdit");
+            if (isEdit == "1") {
+                $("#inputIsEdit").attr("checked", true);
+            }
+        });
+
+    </script>
+
+}

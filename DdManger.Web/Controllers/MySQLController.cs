@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 using DdManger.Web.Models;
+using Microsoft.Extensions.Options;
 
 namespace DdManger.Web.Controllers
 {
@@ -12,14 +13,16 @@ namespace DdManger.Web.Controllers
     {
         SqlSugarClient db = new SqlSugarClient(new ConnectionConfig()
         {
-            ConnectionString = "Data Source=.;Initial Catalog=a;Persist Security Info=True;User ID=sa;pwd=sa", //必填
+            ConnectionString = new ConfigHelper().Get<string>("mysql:ConnectionString"), //必填
             DbType = DbType.MySql,
             IsAutoCloseConnection = true,
             InitKeyType = InitKeyType.SystemTable
         });
 
-        public IActionResult Index()
+
+        public IActionResult Index(int isEdit = 0)
         {
+            ViewBag.isEdit = isEdit;
             return View();
         }
 
@@ -28,8 +31,8 @@ namespace DdManger.Web.Controllers
         /// </summary>
         /// <returns></returns>
         public IActionResult GetDataBase()
-        {           
-            var databases = db.Ado.SqlQuery<string>("show databases;").ToList();         
+        {
+            var databases = db.Ado.SqlQuery<string>("show databases;").ToList();
             return View(databases);
         }
 
@@ -40,7 +43,7 @@ namespace DdManger.Web.Controllers
         /// <returns></returns>
         public IActionResult GetTables(string dbName)
         {
-           // select * from TABLES
+            // select * from TABLES
             var sql = @"show tables from " + dbName;
             var list = db.Ado.SqlQuery<string>(sql).ToList();
             return View(list);
@@ -52,25 +55,54 @@ namespace DdManger.Web.Controllers
         /// <param name="dbName">数据库名</param>
         /// <returns></returns>
         public IActionResult GetColumns(string table)
-        {            
-           //  // SELECT * from  COLUMNS 
-            var sql = @" show columns from " + table;
+        {
+            //  // SELECT * from  COLUMNS 
+            var sql = @" show full columns from " + table;
             var list = db.Ado.SqlQuery<string>(sql).ToList();
-            return Json(list, JsonRequestBehavior.AllowGet);
+            return View(list);
         }
-        
-         /// <summary>
+
+        /// <summary>
         /// 修改列注释
         /// </summary>
         /// <param name="table"></param>
         /// <param name="column"></param>
         /// <param name="comment"></param>
         /// <returns></returns>
-        public IActionResult EditColumns(string table, string column, string comment)
+        private int EditColumns(string table, string column, string comment)
         {
             var sql = "alter table " + table + " modify column " + column + " int comment '" + comment + "'";
             var result = db.Ado.ExecuteCommand(sql);
-            return Json(result, JsonRequestBehavior.AllowGet);
+
+            return result;
+        }
+
+
+        /// <summary>
+        ///  保存列注释
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public JsonResult EditListColCommit(List<TableColumnsViewModel> list)
+        {
+            var rowResult = 0;
+            foreach (var item in list)
+            {
+                rowResult += EditColumns(item.TableName, item.ColumnName, item.Explain);
+            }
+
+            return Json(rowResult);
+        }
+
+        /// <summary>
+        /// 保存列注释_单个
+        /// </summary>
+        public JsonResult EditSingleColCommit(TableColumnsViewModel item)
+        {
+
+            var result = EditColumns(item.TableName, item.ColumnName, item.Explain);
+
+            return Json(result);
         }
     }
 }

@@ -1,0 +1,249 @@
+﻿@using SqlSugar;
+@{
+    SqlSugarClient db = new SqlSugarClient(new ConnectionConfig()
+    {
+        ConnectionString = new ConfigHelper().Get<string>("mysql:ConnectionString"), //必填
+        DbType = DbType.MySql,
+        IsAutoCloseConnection = true,
+        InitKeyType = InitKeyType.SystemTable
+    });
+
+    var dbName = new ConfigHelper().Get<string>("mysql:Db");
+    var isEdit = Convert.ToInt32(ViewBag.isEdit)==1;
+}
+
+@{
+           var sql = @"select table_name as 'Name', TABLE_rows as Rows, table_comment as 'Description'  from information_schema.`TABLES` where table_schema='" + dbName + "'  and table_type='BASE TABLE'";
+    var tableList = db.Ado.SqlQuery<TableViewModel>(sql).ToList();
+
+    var viewSql = @"select table_name as 'Name', TABLE_rows as Rows, table_comment as 'Description'  from information_schema.`TABLES` where table_schema='" + dbName + "'  and table_type='VIEW'";
+
+    var viewList = db.Ado.SqlQuery<TableViewModel>(viewSql).ToList();
+
+    var sql1 = @"select  table_name as TableName,COLUMN_NAME as ColumnName,Column_Type as ColumnType,column_comment as 'Explain'
+from information_schema.`COLUMNS`
+where table_schema = '" + dbName + "'";
+    var tcList = db.Ado.SqlQuery<TableColumnsViewModel>(sql1).ToList();
+    var colsNotCom = tcList.Where(t => t.Explain == null || t.Explain == "").ToList();
+}
+
+@*<div class="panel panel-success">
+        <div class="panel-heading">数据库信息</div>
+        <div class="panel-body">
+            <div class="form-group has-success">
+                <label class="control-label" for="inputSuccess1">数据库连接字符:</label>
+                <input type="text" class="form-control" id="inputSuccess1" aria-describedby="helpBlock2">
+                <button type="button" class="btn btn-primary">连接数据库</button>
+                <span id="helpBlock2" class="help-block">A block of help text that breaks onto a new line and may extend beyond one line.</span>
+            </div>
+
+            <div class="form-group has-success">
+                <label class="control-label" for="inputSuccess1">数据库:</label>
+                <select class="form-control">
+                    @{
+                        var dbSql = "show databases";
+                        var database = db.Ado.SqlQuery<string>(dbSql).ToList();
+                        foreach (var item in database)
+                        {
+                            <option>@item</option>
+                        }
+                    }
+                </select>
+                <button type="button" class="btn btn-primary">加载文档</button>
+                <span id="helpBlock2" class="help-block">A block of help text that breaks onto a new line and may extend beyond one line.</span>
+            </div>
+        </div>
+    </div>*@
+
+@{
+    if (colsNotCom != null && colsNotCom.Any())
+    {
+
+        <div class="panel panel-danger">
+            <div class="panel-heading">未有注释的字段列表</div>
+            <form id="notColComForm">
+                <table class="table">
+                    <thead>
+                        <tr><th>表名</th><th>字段名</th><th>中文描述</th></tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            for (int i = 0; i < colsNotCom.Count; i++)
+                            {
+                                var item = colsNotCom[i];
+
+                                <tr>
+                                    <td>@item.TableName</td>
+                                    <td>@item.ColumnName</td>
+                                    <td>
+                                        <input type="hidden" name="list[@i].TableName" value="@item.TableName" />
+                                        <input type="hidden" name="list[@i].ColumnName" value="@item.ColumnName" />
+                                        <input type="text" name="list[@i].Explain" value="" />
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+
+            </form>
+            <div class="panel-footer">
+                <button type="button" class="btn btn-success" onclick="saveNotCol()">一键保存</button>
+            </div>
+        </div>
+    }
+}
+
+<p><label>是否启动编辑</label><input type="checkbox" id="inputIsEdit" onclick="isEdit()" /></p>
+
+<div class="panel panel-success">
+    <div class="panel-heading">表列表</div>
+    <table class="table">
+        <thead>
+            <tr><th>表注释</th><th>表名</th><th>行数</th></tr>
+        </thead>
+        <tbody>
+            @{
+                foreach (var item in tableList)
+                {
+                    <tr>
+                        <td><a href="#tb_@item.Name">@item.Description</a></td>
+                        <td><a href="#tb_@item.Name">@item.Name</a></td>
+                        <td><a href="#tb_@item.Name">@item.Rows</a></td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="panel panel-success">
+    <div class="panel-heading">视图列表</div>
+    <table class="table">
+        <thead>
+            <tr><th>视图注释</th><th>视图</th><th>行数</th></tr>
+        </thead>
+        <tbody>
+            @{
+                foreach (var item in viewList)
+                {
+                    <tr>
+                        <td><a href="#tb_@item.Name">@item.Description</a></td>
+                        <td><a href="#tb_@item.Name">@item.Name</a></td>
+                        <td><a href="#tb_@item.Name">@item.Rows</a></td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+
+@{
+    foreach (var item in tableList)
+    {
+        <div class="panel panel-default" id="tb_@item.Name">
+            <!-- Default panel contents -->
+            <div class="panel-heading">@item.Name（@item.Description）</div>
+            <!-- Table -->
+            <table class="table">
+                <thead>
+                    <tr><th>中文描述</th><th>字段名</th><th>类型</th><th>修改操作</th></tr>
+                </thead>
+                <tbody>
+                    @{
+                        var tableCos = tcList.Where(t => t.TableName == item.Name).ToList();
+                        for (int i = 0; i < tableCos.Count; i++)
+                        {
+                            var currentCol = tableCos[i];
+
+                            <tr>
+                                <td>@currentCol.Explain</td>
+                                <td>@currentCol.ColumnName</td>
+                                <td>@currentCol.ColumnType</td>
+                                <td>
+                                    @if (isEdit)
+                                    {
+                                        <form>
+                                            <input type="hidden" name="TableName" value="@currentCol.TableName" />
+                                            <input type="hidden" name="ColumnName" value="@currentCol.ColumnName" />
+                                            <input type="text" name="Explain" value="@currentCol.Explain" />
+                                            <input type="button" value="更改注释" onclick="saveSignleCol(this)" />
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+
+@section Scripts{
+
+    <script>
+        // 保存未有注释的字段列表
+        function saveNotCol() {
+            var requestData = $("#notColComForm").serialize();
+
+            $.ajax({
+                type: "post",
+                url: "/MySql/EditListColCommit",
+                data: requestData,
+                success: function (data) {
+                    window.location.href = "/MySql";
+                }
+            });
+        }
+
+        // 保存当个注释
+        function saveSignleCol(obj) {
+            var $obj = $(obj);
+            var requestData = $obj.parent("form").serialize();
+            $.ajax({
+                type: "post",
+                url: "/MySql/EditSingleColCommit",
+                data: requestData,
+                success: function (data) {
+                    if (data == "0") {
+                        var newExplain = $obj.prev().val();
+                        $obj.parents("tr").children("td").eq(0).html("").html(newExplain);
+                    }
+                }
+            });
+        }
+
+
+        function isEdit() {
+
+            var isEdit = getQueryVariable("isEdit");
+            if (isEdit == "1") {
+                window.location.href = "/MySql";
+            } else {
+                window.location.href = "/MySql?isEdit=1";
+            }           
+        }
+
+        function getQueryVariable(variable) {
+            var query = window.location.search.substring(1);
+            var vars = query.split("&");
+            for (var i = 0; i < vars.length; i++) {
+                var pair = vars[i].split("=");
+                if (pair[0] == variable) { return pair[1]; }
+            }
+            return (false);
+        }
+
+        $(function () {
+            var isEdit = getQueryVariable("isEdit");
+            if (isEdit == "1") {
+                $("#inputIsEdit").attr("checked", true);
+            }
+        });
+
+    </script>
+    
+}
