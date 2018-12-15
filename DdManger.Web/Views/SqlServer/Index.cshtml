@@ -2,8 +2,9 @@
 @{
     ViewData["Title"] = "Index";
 }
-<a asp-controller="db" asp-action="GetDataBase">获得所有库</a><br />
-<a asp-controller="db" asp-action="AllNotExp">所有还未加注释的列</a><br />
+@*<a asp-controller="db" asp-action="GetDataBase">获得所有库</a><br />
+    <a asp-controller="db" asp-action="AllNotExp">所有还未加注释的列</a><br />*@
+
 @{
     SqlSugarClient db = new SqlSugarClient(new ConnectionConfig()
     {
@@ -43,7 +44,7 @@ where b.name is not null  /* and d.name=@tableName*/
 order by a.id,a.colorder";
 
     var tcList = db.Ado.SqlQuery<TableColumnsViewModel>(sql1).ToList();
-    var colsNotCom = tcList.Where(t => t.Explain == null).ToList();
+    var colsNotCom = tcList.Where(t => t.Explain == null || (t.Explain != null && string.IsNullOrEmpty(t.Explain.Trim()))).ToList();
 }
 
 @{
@@ -51,34 +52,35 @@ order by a.id,a.colorder";
     {
         <div class="panel panel-danger">
             <div class="panel-heading">未有注释的字段列表</div>
-            <table class="table">
-                <thead>
-                    <tr><th>表名</th><th>字段名</th><th>中文描述</th></tr>
-                </thead>
-                <tbody>
-                    @{
-                        for (int i = 0; i < colsNotCom.Count; i++)
-                        {
-                            var item = colsNotCom[i];
+            <form id="notColComForm">
+                <table class="table">
+                    <thead>
+                        <tr><th>表名</th><th>字段名</th><th>中文描述</th></tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            for (int i = 0; i < colsNotCom.Count; i++)
+                            {
+                                var item = colsNotCom[i];
 
-                            <tr>
-                                <td>@item.TableName</td>
-                                <td>@item.ColumnName</td>
-                                <td>
-                                    <input type="hidden" name="list[@i].TableName" value="@item.TableName" />
-                                    <input type="hidden" name="list[@i].ColumnName" value="@item.ColumnName" />
-                                    <input type="text" name="list[@i].Explain" value="" />
-                                </td>
-                            </tr>
+                                <tr>
+                                    <td>@item.TableName</td>
+                                    <td>@item.ColumnName</td>
+                                    <td>
+                                        <input type="hidden" name="list[@i].TableName" value="@item.TableName" />
+                                        <input type="hidden" name="list[@i].ColumnName" value="@item.ColumnName" />
+                                        <input type="text" name="list[@i].Explain" value="" />
+                                    </td>
+                                </tr>
+                            }
                         }
-                    }
-                </tbody>
-            </table>
-            <div class="panel-footer">
-                <button type="button" class="btn btn-success">一键保存</button>
-            </div>
+                    </tbody>
+                </table>
+                <div class="panel-footer">
+                    <button type="button" class="btn btn-success" onclick="saveNotCol()">一键保存</button>
+                </div>
+            </form>
         </div>
-
     }
 }
 
@@ -96,7 +98,54 @@ order by a.id,a.colorder";
                 foreach (var item in tableList)
                 {
                     <tr>
-                        <td><a href="#tb_@item.Name">@item.Description</a></td>
+                        <td>
+                            @if (isEdit)
+                            {
+                                <div class="showDiv" style="display:none;">
+                                    <a href="#tb_@item.Name">@item.Description</a>
+                                    <input type="button" class="btn" style="display:none;" value="修改" onclick="btnEdit(this)" />
+                                </div>
+                                <div style="display:block;" class="editDiv">
+                                    <form>
+                                        <input type="hidden" name="Name" value="@item.Name" />
+                                        <input type="text" name="Description" value="@item.Description" />
+                                        <input type="button" value="更改注释" onclick="saveSignleTab(this,1)" />
+                                    </form>
+                                </div>
+                            }
+                            else
+                            {
+                                var tabDesc = item.Description.Trim() ?? "";
+                                if (string.IsNullOrEmpty(tabDesc))
+                                {
+                                    <div class="showDiv" style="display:none;">
+                                        <a href="#tb_@item.Name">@item.Description</a>
+                                        <input type="button" class="btn" style="display:none;" value="修改" onclick="btnEdit(this)" />
+                                    </div>
+                                    <div style="display:block;" class="editDiv">
+                                        <form>
+                                            <input type="hidden" name="Name" value="@item.Name" />
+                                            <input type="text" name="Description" value="@item.Description" />
+                                            <input type="button" value="更改注释" onclick="saveSignleTab(this,1)" />
+                                        </form>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="showDiv">
+                                        <a href="#tb_@item.Name">@item.Description</a>
+                                        <input type="button" class="btn" style="display:none;" value="修改" onclick="btnEdit(this)" />
+                                    </div>
+                                    <div style="display:none;" class="editDiv">
+                                        <form>
+                                            <input type="hidden" name="Name" value="@item.Name" />
+                                            <input type="text" name="Description" value="@item.Description" />
+                                            <input type="button" value="更改注释" onclick="saveSignleTab(this,1)" />
+                                        </form>
+                                    </div>
+                                }
+                            }
+                        </td>
                         <td><a href="#tb_@item.Name">@item.Name</a></td>
                         <td><a href="#tb_@item.Name">@item.Rows</a></td>
                     </tr>
@@ -125,28 +174,62 @@ order by a.id,a.colorder";
                             var currentCol = tableCos[i];
 
                             <tr>
-                                <td>@currentCol.TableName</td>
-                                <td>@currentCol.ColumnName</td>
                                 <td>
-                                    <form>
-                                        <input type="hidden" name="list[@i].TableName" value="@currentCol.TableName" />
-                                        <input type="hidden" name="list[@i].ColumnName" value="@currentCol.ColumnName" />
-                                        <input type="text" name="list[@i].Explain" value="" />
-                                        <input type="button" value="更改注释" onclick="saveSignleCol(this)" />
-                                    </form>
+                                    @if (isEdit)
+                                    {
+                                        <label></label>
+                                        <form>
+                                            <input type="hidden" name="TableName" value="@currentCol.TableName" />
+                                            <input type="hidden" name="ColumnName" value="@currentCol.ColumnName" />
+                                            <input type="text" name="Explain" value="@currentCol.Explain" />
+                                            <input type="button" value="更改注释" onclick="saveSignleCol(this)" />
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        var explain = currentCol.Explain.Trim() ?? "";
+                                        if (string.IsNullOrEmpty(explain))
+                                        {
+                                            <div class="showDiv" style="display:none;">
+                                                <label>@currentCol.Explain</label>
+                                                <input type="button" class="btn" style="display:none;" value="修改" onclick="btnEdit(this)" />
+                                            </div>
+                                            <div class="editDiv">
+                                                <form>
+                                                    <input type="hidden" name="TableName" value="@currentCol.TableName" />
+                                                    <input type="hidden" name="ColumnName" value="@currentCol.ColumnName" />
+                                                    <input type="text" name="Explain" value="@currentCol.Explain" />
+                                                    <input type="button" value="更改注释" onclick="saveSignleCol(this,1)" />
+                                                </form>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="showDiv">
+                                                <label>@currentCol.Explain</label>
+                                                <input type="button" class="btn" style="display:none;" value="修改" onclick="btnEdit(this)" />
+                                            </div>
+                                            <div style="display:none;" class="editDiv">
+                                                <form>
+                                                    <input type="hidden" name="TableName" value="@currentCol.TableName" />
+                                                    <input type="hidden" name="ColumnName" value="@currentCol.ColumnName" />
+                                                    <input type="text" name="Explain" value="@currentCol.Explain" />
+                                                    <input type="button" value="更改注释" onclick="saveSignleCol(this,1)" />
+                                                </form>
+                                            </div>
+                                        }
+                                    }
                                 </td>
+                                <td>@currentCol.ColumnName</td>
+                                <td></td>
                             </tr>
                         }
                     }
                 </tbody>
             </table>
         </div>
-
     }
 }
-
-<div class="alert alert-danger" role="alert">...</div>
-
 
 @section Scripts{
 
@@ -166,7 +249,7 @@ order by a.id,a.colorder";
         }
 
         // 保存当个注释
-        function saveSignleCol(obj) {
+        function saveSignleCol(obj, num) {
             var $obj = $(obj);
             var requestData = $obj.parent("form").serialize();
             $.ajax({
@@ -176,7 +259,34 @@ order by a.id,a.colorder";
                 success: function (data) {
                     if (data == "0") {
                         var newExplain = $obj.prev().val();
-                        $obj.parents("tr").children("td").eq(0).html("").html(newExplain);
+                        $obj.parents("tr").children("td").eq(0).find("label").html("").html(newExplain);
+                        if (num && num == 1) {
+                            var $editDiv = $obj.parents(".editDiv");
+                            $editDiv.hide();
+                            $editDiv.prev().show();
+                        }
+                    }
+                }
+            });
+        }
+
+        function saveSignleTab(obj, num) {
+            var $obj = $(obj);
+            var requestData = $obj.parent("form").serialize();
+            $.ajax({
+                type: "post",
+                url: "/SqlServer/EditSingleTabCommit",
+                data: requestData,
+                success: function (data) {
+                    if (data == "1") {
+                        var newExplain = $obj.prev().val();
+                        $obj.parents("tr").children("td").eq(0).find("a").html("").html(newExplain);
+                        if (num && num == 1) {
+                            var $editDiv = $obj.parents(".editDiv");
+                            $editDiv.hide();
+                            $editDiv.prev().show();
+
+                        }
                     }
                 }
             });
@@ -208,7 +318,22 @@ order by a.id,a.colorder";
             if (isEdit == "1") {
                 $("#inputIsEdit").attr("checked", true);
             }
+
+            $("td").mouseover(function () {
+                var $td = $(this);
+                $td.find(".btn").show();
+            }).mouseout(function () {
+                var $td = $(this);
+                $td.find(".btn").hide();
+            });
+
         });
+
+        function btnEdit(obj) {
+            var $current = $(obj).parent(".showDiv");
+            $current.next().show();
+            $current.hide();
+        }
 
     </script>
 

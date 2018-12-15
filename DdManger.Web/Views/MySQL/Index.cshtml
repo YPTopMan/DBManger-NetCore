@@ -106,11 +106,58 @@ where table_schema = '" + dbName + "'";
             @{
                 foreach (var item in tableList)
                 {
-                    <tr>
-                        <td><a href="#tb_@item.Name">@item.Description</a></td>
-                        <td><a href="#tb_@item.Name">@item.Name</a></td>
-                        <td><a href="#tb_@item.Name">@item.Rows</a></td>
-                    </tr>
+            <tr>
+                <td>
+                    @if (isEdit)
+                    {
+                        <div class="showDiv" style="display:none;">
+                            <a href="#tb_@item.Name">@item.Description</a>
+                            <input type="button" class="btn" style="display:none;" value="修改" onclick="btnEdit(this)" />
+                        </div>
+                        <div style="display:block;" class="editDiv">
+                            <form>
+                                <input type="hidden" name="Name" value="@item.Name" />
+                                <input type="text" name="Description" value="@item.Description" />
+                                <input type="button" value="更改注释" onclick="saveSignleTab(this,1)" />
+                            </form>
+                        </div>
+                    }
+                    else
+                    {
+                        var tabDesc = item.Description.Trim() ?? "";
+                        if (string.IsNullOrEmpty(tabDesc))
+                        {
+                            <div class="showDiv" style="display:none;">
+                                <a href="#tb_@item.Name">@item.Description</a>
+                                <input type="button" class="btn" style="display:none;" value="修改" onclick="btnEdit(this)" />
+                            </div>
+                            <div style="display:block;" class="editDiv">
+                                <form>
+                                    <input type="hidden" name="Name" value="@item.Name" />
+                                    <input type="text" name="Description" value="@item.Description" />
+                                    <input type="button" value="更改注释" onclick="saveSignleTab(this,1)" />
+                                </form>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="showDiv">
+                                <a href="#tb_@item.Name">@item.Description</a>
+                                <input type="button" class="btn" style="display:none;" value="修改" onclick="btnEdit(this)" />
+                            </div>
+                            <div style="display:none;" class="editDiv">
+                                <form>
+                                    <input type="hidden" name="Name" value="@item.Name" />
+                                    <input type="text" name="Description" value="@item.Description" />
+                                    <input type="button" value="更改注释" onclick="saveSignleTab(this,1)" />
+                                </form>
+                            </div>
+                        }
+                    }
+                </td>
+                <td><a href="#tb_@item.Name">@item.Name</a></td>
+                <td><a href="#tb_@item.Name">@item.Rows</a></td>
+            </tr>
                 }
             }
         </tbody>
@@ -138,7 +185,6 @@ where table_schema = '" + dbName + "'";
     </table>
 </div>
 
-
 @{
     foreach (var item in tableList)
     {
@@ -157,22 +203,57 @@ where table_schema = '" + dbName + "'";
                         {
                             var currentCol = tableCos[i];
 
-                            <tr>
-                                <td>@currentCol.Explain</td>
-                                <td>@currentCol.ColumnName</td>
-                                <td>@currentCol.ColumnType</td>
-                                <td>
-                                    @if (isEdit)
-                                    {
+                    <tr>
+                        <td>
+                            @if (isEdit)
+                            {
+                                <label></label>
+                                <form>
+                                    <input type="hidden" name="TableName" value="@currentCol.TableName" />
+                                    <input type="hidden" name="ColumnName" value="@currentCol.ColumnName" />
+                                    <input type="text" name="Explain" value="@currentCol.Explain" />
+                                    <input type="button" value="更改注释" onclick="saveSignleCol(this)" />
+                                </form>
+                            }
+                            else
+                            {
+                                var explain = currentCol.Explain.Trim() ?? "";
+                                if (string.IsNullOrEmpty(explain))
+                                {
+                                    <div class="showDiv" style="display:none;">
+                                        <label>@currentCol.Explain</label>
+                                        <input type="button" class="btn" style="display:none;" value="修改" onclick="btnEdit(this)" />
+                                    </div>
+                                    <div class="editDiv">
                                         <form>
                                             <input type="hidden" name="TableName" value="@currentCol.TableName" />
                                             <input type="hidden" name="ColumnName" value="@currentCol.ColumnName" />
                                             <input type="text" name="Explain" value="@currentCol.Explain" />
-                                            <input type="button" value="更改注释" onclick="saveSignleCol(this)" />
+                                            <input type="button" value="更改注释" onclick="saveSignleCol(this,1)" />
                                         </form>
-                                    }
-                                </td>
-                            </tr>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="showDiv">
+                                        <label>@currentCol.Explain</label>
+                                        <input type="button" class="btn" style="display:none;" value="修改" onclick="btnEdit(this)" />
+                                    </div>
+                                    <div style="display:none;" class="editDiv">
+                                        <form>
+                                            <input type="hidden" name="TableName" value="@currentCol.TableName" />
+                                            <input type="hidden" name="ColumnName" value="@currentCol.ColumnName" />
+                                            <input type="text" name="Explain" value="@currentCol.Explain" />
+                                            <input type="button" value="更改注释" onclick="saveSignleCol(this,1)" />
+                                        </form>
+                                    </div>
+                                }
+                            }
+                        </td>
+                        <td>@currentCol.ColumnName</td>
+                        <td>@currentCol.ColumnType</td>
+                        <td></td>
+                    </tr>
                         }
                     }
                 </tbody>
@@ -200,7 +281,7 @@ where table_schema = '" + dbName + "'";
         }
 
         // 保存当个注释
-        function saveSignleCol(obj) {
+        function saveSignleCol(obj, num) {
             var $obj = $(obj);
             var requestData = $obj.parent("form").serialize();
             $.ajax({
@@ -210,12 +291,37 @@ where table_schema = '" + dbName + "'";
                 success: function (data) {
                     if (data == "0") {
                         var newExplain = $obj.prev().val();
-                        $obj.parents("tr").children("td").eq(0).html("").html(newExplain);
+                        $obj.parents("tr").children("td").eq(0).find("label").html("").html(newExplain);
+                        if (num && num == 1) {
+                            var $editDiv = $obj.parents(".editDiv");
+                            $editDiv.hide();
+                            $editDiv.prev().show();
+                        }
                     }
                 }
             });
         }
 
+        function saveSignleTab(obj, num) {
+            var $obj = $(obj);
+            var requestData = $obj.parent("form").serialize();
+            $.ajax({
+                type: "post",
+                url: "/MySql/EditSingleTabCommit",
+                data: requestData,
+                success: function (data) {
+                    if (data == "1") {
+                        var newExplain = $obj.prev().val();
+                        $obj.parents("tr").children("td").eq(0).find("a").html("").html(newExplain);
+                        if (num && num == 1) {
+                            var $editDiv = $obj.parents(".editDiv");
+                            $editDiv.hide();
+                            $editDiv.prev().show();
+                        }
+                    }
+                }
+            });
+        }
 
         function isEdit() {
 
@@ -242,7 +348,22 @@ where table_schema = '" + dbName + "'";
             if (isEdit == "1") {
                 $("#inputIsEdit").attr("checked", true);
             }
+
+            $("td").mouseover(function () {
+                var $td = $(this);
+                $td.find(".btn").show();
+            }).mouseout(function () {
+                var $td = $(this);
+                $td.find(".btn").hide();
+            });
+
         });
+
+        function btnEdit(obj) {
+            var $current = $(obj).parent(".showDiv");
+            $current.next().show();
+            $current.hide();
+        }
 
     </script>
     

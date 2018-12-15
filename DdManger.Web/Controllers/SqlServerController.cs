@@ -122,7 +122,7 @@ order by a.id,a.colorder";
         /// <returns></returns>
         public TableViewModel GetTableInfo(string table)
         {
-            var sql = @" SELECT a.id,a.name, b.rows,c.value as description  FROM sysobjects AS a 
+            var sql = @" SELECT a.id,a.name, b.rows,c.value as [description],class_desc as ClassDesc  FROM sysobjects AS a 
                         left JOIN sysindexes AS b ON a.id = b.id
                         left join sys.extended_properties c on a.id=c.major_id and minor_id=0 
                         WHERE (a.type = 'u') AND (b.indid IN (0, 1))  and a.name=@tableName
@@ -131,17 +131,15 @@ order by a.id,a.colorder";
            return db.Ado.SqlQuery<TableViewModel>(sql, new { tableName = table }).First();
         }
 
-
         /// <summary>
         /// 修改表注释
         /// </summary>
         /// <param name="table"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public IActionResult EditTableDescription(TableViewModel viewModel)
+        /// <returns></returns>      
+        public int EditTableDescription(TableViewModel viewModel)
         {
             var tableInfo=GetTableInfo(viewModel.Name);
-            if (string.IsNullOrEmpty(tableInfo.Description))
+            if (string.IsNullOrEmpty(tableInfo.ClassDesc))
             {
                 db.Ado.ExecuteCommand("EXECUTE sp_addextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, NULL, NULL", new { table = viewModel.Name, d = viewModel.Description });
             }
@@ -150,12 +148,11 @@ order by a.id,a.colorder";
                 db.Ado.ExecuteCommand("EXECUTE sp_updateextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, NULL, NULL", new { table = viewModel.Name, d = viewModel.Description });
             }         
 
-            return View(tableInfo);
+            return 1;
         }
 
-
         /// <summary>
-        /// 修改列注释
+        /// 修改表注释
         /// </summary>
         /// <param name="table"></param>
         /// <param name="column"></param>
@@ -174,15 +171,27 @@ order by a.id,a.colorder";
         /// <param name="table"></param>
         /// <param name="column"></param>
         /// <returns></returns>
+        [HttpPost]
+        public IActionResult EditSingleTabCommit(TableViewModel viewModel)
+        {
+            var firstModel = EditTableDescription(viewModel);          
+            return Json(firstModel);
+        }
+
+        /// <summary>
+        /// 修改列注释
+        /// </summary>
+        /// <param name="table"></param>
+        /// <param name="column"></param>
+        /// <returns></returns>
     
         public int EditTableCDescription(TableColumnsViewModel viewModel)
         {
-
             var firstModel = GetColumnInfo(viewModel.TableName, viewModel.ColumnName);
 
             var result = 0;
 
-            if (string.IsNullOrEmpty(firstModel.Explain.Trim()))
+            if (string.IsNullOrEmpty(firstModel.ClassDesc.Trim()))
             {
                 result = db.Ado.ExecuteCommand("EXECUTE sp_addextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, N'column',@cName", new { table = viewModel.TableName, cName = viewModel.ColumnName, d = viewModel.Explain });
             }
@@ -193,7 +202,6 @@ order by a.id,a.colorder";
 
             return result;
         }
-
 
         /// <summary>
         /// 获得列信息
@@ -209,7 +217,7 @@ order by a.id,a.colorder";
         WHERE (id = a.id) AND (indid in  (SELECT indid FROM sysindexkeys  WHERE (id = a.id) AND (colid in  (SELECT colid FROM syscolumns WHERE (id = a.id) AND (name = a.name)))))))  AND (xtype = 'PK'))>0 then '√' else '' end) IsPk,
         b.name  ColumnType,a.length  ByteLength ,
         COLUMNPROPERTY(a.id,a.name,'PRECISION') as [Precision],  isnull(COLUMNPROPERTY(a.id,a.name,'Scale'),0) as  decimalDigits,
-        (case when a.isnullable=1 then '√'else '' end)  isnullable,isnull(e.text,'')  defaultValue,isnull(g.[value], ' ') AS [explain]
+        (case when a.isnullable=1 then '√'else '' end)  isnullable,isnull(e.text,'')  defaultValue,isnull(g.[value], ' ') AS [explain],g.class_desc as ClassDesc
         FROM  syscolumns a
         left join systypes b on a.xtype=b.xusertype
         inner join sysobjects d on a.id=d.id and d.xtype='U' and d.name<>'dtproperties'
@@ -232,7 +240,7 @@ order by a.id,a.colorder";
         {
             var rowResult = 0;
             foreach (var item in list)
-            {
+            {          
                 rowResult += EditTableCDescription(item);
             }
 
@@ -246,9 +254,8 @@ order by a.id,a.colorder";
         {
             var result = EditTableCDescription(item);
 
-            return Json(result);
+            return Json(0);
         }
-
 
         /// <summary>
         /// 所有未加注释的列

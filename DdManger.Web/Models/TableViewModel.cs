@@ -26,8 +26,13 @@ namespace DdManger.Web.Models
         /// <summary>
         /// 表描述(注释)
         /// </summary>
-
         [Display(Name = "表描述(注释)")]
         public string Description { get; set; }
+
+        /// <summary>
+        /// 类描述
+        /// <para>该值，判断是否添加过注释</para>
+        /// </summary>
+        public string ClassDesc { get; set; }
     }
 }

@@ -79,6 +79,12 @@ namespace DdManger.Web.Models
         [Display(Name = "小数位数")]
         public string DecimalDigits { get; set; }
 
+        /// <summary>
+        /// 类描述
+        /// <para>该值，判断是否添加过注释</para>
+        /// </summary>
+        public string ClassDesc { get; set; }
+
     }
 
 }

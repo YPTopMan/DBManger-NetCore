@@ -62,6 +62,31 @@ namespace DdManger.Web.Controllers
             return View(list);
         }
 
+
+        /// <summary>
+        /// 修改表注释
+        /// </summary>
+        /// <param name="table"></param>
+        /// <returns></returns>      
+        public int EditTableDescription(TableViewModel viewModel)
+        {
+            db.Ado.ExecuteCommand("alter table " + viewModel.Name +" comment @d ;", new { d = viewModel.Description });
+            return 1;
+        }
+
+        /// <summary>
+        /// 修改列注释
+        /// </summary>
+        /// <param name="table"></param>
+        /// <param name="column"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public IActionResult EditSingleTabCommit(TableViewModel viewModel)
+        {
+            var firstModel = EditTableDescription(viewModel);
+            return Json(firstModel);
+        }
+
         /// <summary>
         /// 修改列注释
         /// </summary>
