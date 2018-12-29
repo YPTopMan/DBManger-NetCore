@@ -18,7 +18,7 @@
     var dbName = new ConfigHelper().Get<string>("sqlserver:Db");
 
     //  --查询数据库中所有的表名及行数
-    var sql = @" SELECT a.name Name, b.rows Rows,c.value as Description  FROM sysobjects AS a
+    var sql = @" SELECT a.name Name, CAST(b.rows as nvarchar) Rows,CAST(isnull(c.value,'') as nvarchar)  as Description , '' as ClassDesc   FROM sysobjects AS a
 left JOIN sysindexes AS b ON a.id = b.id
 left join sys.extended_properties c on a.id=c.major_id and minor_id=0
 WHERE (a.type = 'u') AND (b.indid IN (0, 1))
