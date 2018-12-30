@@ -21,7 +21,7 @@ namespace DdManger.Web.Models
         /// 行数
         /// </summary>
         [Display(Name = "行数")]
-        public int Rows { get; set; }
+        public string Rows { get; set; }
 
         /// <summary>
         /// 表描述(注释)
