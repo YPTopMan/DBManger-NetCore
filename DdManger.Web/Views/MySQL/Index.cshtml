@@ -1,5 +1,6 @@
 ﻿@using SqlSugar;
 @{
+    ViewData["Title"] = "MySql";
     SqlSugarClient db = new SqlSugarClient(new ConnectionConfig()
     {
         ConnectionString = new ConfigHelper().Get<string>("mysql:ConnectionString"), //必填

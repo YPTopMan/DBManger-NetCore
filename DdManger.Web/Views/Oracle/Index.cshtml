@@ -1,5 +1,7 @@
 ﻿@using SqlSugar;
 @{
+    ViewData["Title"] = "Oracle";
+
     SqlSugarClient db = new SqlSugarClient(new ConnectionConfig()
     {
         ConnectionString = new ConfigHelper().Get<string>("oracle:ConnectionString"), //必填

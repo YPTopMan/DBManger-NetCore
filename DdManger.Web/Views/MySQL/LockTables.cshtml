@@ -1,16 +1,20 @@
 ﻿@using SqlSugar
 
 @{
+    ViewData["Title"] = "LockTables";
+}
+
+@{
     SqlSugarClient db = new SqlSugarClient(new ConnectionConfig()
     {
-        ConnectionString = new ConfigHelper().Get<string>("sqlserver:ConnectionString"), //必填
-        DbType = DbType.SqlServer,
+        ConnectionString = new ConfigHelper().Get<string>("mysql:ConnectionString"), //必填
+        DbType = DbType.MySql,
         IsAutoCloseConnection = true,
         InitKeyType = InitKeyType.SystemTable
     });
 
-    var sql = @"select request_session_id spid, OBJECT_NAME(resource_associated_entity_id) tableName    from    sys.dm_tran_locks   where   resource_type='OBJECT' ";
-    var tableList = db.Ado.SqlQuery<LockTableViewModel>(sql).ToList();
+    var sql = @"show OPEN TABLES where In_use > 0;";
+    var tableList = db.Ado.SqlQuery<MySqlLockTableViewModel>(sql).ToList();
 }
 <form>
     <table>
@@ -23,11 +27,11 @@
                 foreach (var item in tableList)
                 {
                     <tr>
-                        <td>@item.Spid</td>
-                        <td>@item.TableName</td>
+                        <td>@item.Name_Locked</td>
+                        <td>@item.Table</td>
                         <td>
-                            <input type="button" value="杀死进程" onclick="kill(@item.Spid)" />
-                            <input type="hidden" value="@item.Spid" name="Spid" />
+                            <input type="button" value="杀死进程" onclick="kill(@item.Name_Locked)" />
+                            <input type="hidden" value="@item.Name_Locked" name="Spid" />
                         </td>
                     </tr>
                 }
@@ -64,7 +68,7 @@
                 }
             });
         }
-      
+
 
     </script>
 }

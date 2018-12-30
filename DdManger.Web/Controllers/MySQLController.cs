@@ -129,5 +129,57 @@ namespace DdManger.Web.Controllers
 
             return Json(result);
         }
+
+        /// <summary>
+        /// 获得所有被锁定的表
+        /// </summary>
+        /// <returns></returns>
+        public IActionResult LockTables()
+        {
+            var sql = "select request_session_id  spid,OBJECT_NAME(resource_associated_entity_id) tableName   from   sys.dm_tran_locks where resource_type='OBJECT'";
+
+            var result = db.Ado.SqlQuery<LockTableViewModel>(sql);
+
+            return View();
+        }
+
+
+        /// <summary>
+        /// 关闭死锁
+        /// </summary>
+        /// <param name="spid"></param>
+        /// <returns></returns>
+        public int KillSpid(string spid)
+        {
+            db.Ado.ExecuteCommand("kill " + spid);
+            return 1;
+        }
+
+        /// <summary>
+        /// 杀死单个死锁
+        /// </summary>
+        /// <param name="spid"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public ActionResult KillSingleCommit(string spid)
+        {
+            KillSpid(spid);
+            return Json(1);
+        }
+
+        /// <summary>
+        /// 杀死集合死锁
+        /// </summary>
+        /// <param name="spids"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public ActionResult KillListCommit(List<string> spids)
+        {
+            foreach (var item in spids)
+            {
+                KillSpid(item);
+            }
+            return Json(1);
+        }
     }
 }

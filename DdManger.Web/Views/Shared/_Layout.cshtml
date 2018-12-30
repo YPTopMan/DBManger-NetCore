@@ -47,15 +47,14 @@
                 <ul class="nav navbar-nav">
                     <li><a asp-area="" asp-controller="SQLServer" asp-action="Index">SQLServer</a></li>
                     <li><a asp-area="" asp-controller="MySQL" asp-action="Index">MySQL</a></li>
-                    <li><a asp-area="" asp-controller="Oracle" asp-action="Index">Oracle</a></li>
-                    <li><a asp-area="" asp-controller="Home" asp-action="About">其他介绍</a></li>
+                    <li><a asp-area="" asp-controller="Oracle" asp-action="Index">Oracle</a></li>                   
                 </ul>
             </div>
         </div>
     </nav>
     <div class="container body-content">
         <a href="/db/LockTables">获得所有被锁定的表</a>
-        @{
+        @*@{
 
             var dbAddress = Context.Request.Cookies["dbAddress"];
 
@@ -75,12 +74,12 @@
 
                 }
             }
-        }
+        }*@
 
         @RenderBody()
         <hr />
         <footer>
-            <p>&copy; 2017 - 数据库管理文档</p>
+            <p>&copy; @DateTime.Now.Year - 数据库管理文档</p>
         </footer>
     </div>
 
