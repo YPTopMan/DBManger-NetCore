@@ -7,3 +7,5 @@
 1.编辑表注释<br/>
 2.编辑列注释<br/>
 3.列表展示所有表与列<br/>
+
+修改一下 appsettings.json -文件下的数据库连接对象即可使用，目前只实现了sqlserver，mysql。  
