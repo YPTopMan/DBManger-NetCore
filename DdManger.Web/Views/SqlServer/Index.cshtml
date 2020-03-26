@@ -47,7 +47,7 @@ order by a.id,a.colorder";
     var colsNotCom = tcList.Where(t => t.Explain == null || (t.Explain != null && string.IsNullOrEmpty(t.Explain.Trim()))).ToList();
 }
 
-@{
+@*@{
     if (colsNotCom != null && colsNotCom.Any())
     {
         <div class="panel panel-danger">
@@ -82,7 +82,7 @@ order by a.id,a.colorder";
             </form>
         </div>
     }
-}
+}*@
 
 <p><label>是否启动编辑</label><input type="checkbox" id="inputIsEdit" onclick="isEdit()" /></p>
 

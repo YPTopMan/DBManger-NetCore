@@ -16,7 +16,7 @@ namespace DdManger.Web.Controllers
     {
         SqlSugarClient db = new SqlSugarClient(new ConnectionConfig()
         {
-            ConnectionString = new ConfigHelper().Get<string>("sqlserver:ConnectionString"),          
+            ConnectionString = new ConfigHelper().Get<string>("sqlserver:ConnectionString"),
             DbType = DbType.SqlServer,
             IsAutoCloseConnection = true,
             InitKeyType = InitKeyType.SystemTable
@@ -110,7 +110,7 @@ order by a.id,a.colorder";
         /// <returns></returns>
         [HttpGet]
         public IActionResult EditTableDescription(string table)
-        {     
+        {
 
             return View(GetTableInfo(table));
         }
@@ -128,7 +128,7 @@ order by a.id,a.colorder";
                         WHERE (a.type = 'u') AND (b.indid IN (0, 1))  and a.name=@tableName
                         ORDER BY a.name,b.rows DESC";
 
-           return db.Ado.SqlQuery<TableViewModel>(sql, new { tableName = table }).First();
+            return db.Ado.SqlQuery<TableViewModel>(sql, new { tableName = table }).First();
         }
 
         /// <summary>
@@ -138,7 +138,7 @@ order by a.id,a.colorder";
         /// <returns></returns>      
         public int EditTableDescription(TableViewModel viewModel)
         {
-            var tableInfo=GetTableInfo(viewModel.Name);
+            var tableInfo = GetTableInfo(viewModel.Name);
             if (string.IsNullOrEmpty(tableInfo.ClassDesc))
             {
                 db.Ado.ExecuteCommand("EXECUTE sp_addextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, NULL, NULL", new { table = viewModel.Name, d = viewModel.Description });
@@ -146,7 +146,7 @@ order by a.id,a.colorder";
             else
             {
                 db.Ado.ExecuteCommand("EXECUTE sp_updateextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, NULL, NULL", new { table = viewModel.Name, d = viewModel.Description });
-            }         
+            }
 
             return 1;
         }
@@ -174,7 +174,7 @@ order by a.id,a.colorder";
         [HttpPost]
         public IActionResult EditSingleTabCommit(TableViewModel viewModel)
         {
-            var firstModel = EditTableDescription(viewModel);          
+            var firstModel = EditTableDescription(viewModel);
             return Json(firstModel);
         }
 
@@ -184,7 +184,7 @@ order by a.id,a.colorder";
         /// <param name="table"></param>
         /// <param name="column"></param>
         /// <returns></returns>
-    
+
         public int EditTableCDescription(TableColumnsViewModel viewModel)
         {
             var firstModel = GetColumnInfo(viewModel.TableName, viewModel.ColumnName);
@@ -198,7 +198,7 @@ order by a.id,a.colorder";
             else
             {
                 result = db.Ado.ExecuteCommand("EXECUTE sp_updateextendedproperty N'MS_Description', @d, N'user', N'dbo', N'table', @table, N'column',@cName", new { table = viewModel.TableName, cName = viewModel.ColumnName, d = viewModel.Explain });
-            }      
+            }
 
             return result;
         }
@@ -240,7 +240,7 @@ order by a.id,a.colorder";
         {
             var rowResult = 0;
             foreach (var item in list)
-            {          
+            {
                 rowResult += EditTableCDescription(item);
             }
 
@@ -272,8 +272,9 @@ order by a.id,a.colorder";
         /// </summary>
         /// <param name="spid"></param>
         /// <returns></returns>
-        public int KillSpid(string spid) {
-            db.Ado.ExecuteCommand("kill "+ spid);
+        public int KillSpid(string spid)
+        {
+            db.Ado.ExecuteCommand("kill " + spid);
             return 1;
         }
 
@@ -283,7 +284,8 @@ order by a.id,a.colorder";
         /// <param name="spid"></param>
         /// <returns></returns>
         [HttpPost]
-        public ActionResult KillSingleCommit(string spid) {
+        public ActionResult KillSingleCommit(string spid)
+        {
             KillSpid(spid);
             return Json(1);
         }
@@ -299,8 +301,8 @@ order by a.id,a.colorder";
             foreach (var item in spids)
             {
                 KillSpid(item);
-            }           
+            }
             return Json(1);
-        }        
+        }
     }
 }
