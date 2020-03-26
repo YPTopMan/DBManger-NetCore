@@ -19,7 +19,11 @@ namespace DdManger.Web.Controllers
             InitKeyType = InitKeyType.SystemTable
         });
 
-
+        /// <summary>
+        /// 首页
+        /// </summary>
+        /// <param name="isEdit"></param>
+        /// <returns></returns>
         public IActionResult Index(int isEdit = 0)
         {
             ViewBag.isEdit = isEdit;
