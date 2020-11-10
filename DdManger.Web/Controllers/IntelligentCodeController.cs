@@ -90,12 +90,12 @@ namespace DdManger.Web.Controllers
         public void getRepository(string name, string modelName, string entityName)
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append(@"using JYT.JytPlatformServer.DbModels.BusinessModels;
+            sb.Append(@"using JytPlatformServer.DbModels.BusinessModels;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace JYT.JytPlatformServer.DbRepositories.BusinessRepositories
+namespaceJytPlatformServer.DbRepositories.BusinessRepositories
 {
     /// <summary>
     ");
@@ -130,14 +130,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JYT.JytDtoModels.WebApiModels;
-using JYT.JytPlatformServer.Business.IServices;
-using JYT.JytPlatformServer.DtoModels.BusinessDtoModels.Milestone;
-using JYT.JytPlatformServer.DtoModels.BusinessDtoModels.ProjectManagements;
-using JYT.JytPlatformServer.WebAPI.Business.Common.Models;
+using JytPlatformServer.Business.IServices;
+using JytPlatformServer.DtoModels.BusinessDtoModels.Milestone;
+using JytPlatformServer.DtoModels.BusinessDtoModels.ProjectManagements;
+using JytPlatformServer.WebAPI.Business.Common.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace JYT.JytPlatformServer.WebAPI.Controllers.BusinessControllers
+namespace JytPlatformServer.WebAPI.Controllers.BusinessControllers
 {
     /// <summary>
     /// " + name + @"控制器
@@ -241,14 +241,14 @@ namespace JYT.JytPlatformServer.WebAPI.Controllers.BusinessControllers
         public string getIServer(string name, string modelName)
         {
             string str = (@"using JYT.JytDtoModels.WebApiModels;
-using JYT.JytPlatformServer.DtoModels.BusinessDtoModels.Milestone;
-using JYT.JytPlatformServer.DtoModels.BusinessDtoModels.ProjectManagements;
+using JytPlatformServer.DtoModels.BusinessDtoModels.Milestone;
+using JytPlatformServer.DtoModels.BusinessDtoModels.ProjectManagements;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace JYT.JytPlatformServer.Business.IServices
+namespace JytPlatformServer.Business.IServices
 {
     /// <summary>
     /// " + name + @"服务接口
@@ -361,26 +361,26 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
 using JYT.JytCommon.CustomAttributes;
 using JYT.JytCommon.ExtensionFunctions;
 using JYT.JytDtoModels.WebApiModels;
-using JYT.JytPlatformServer.Business.Common.Helpers;
-using JYT.JytPlatformServer.Business.Common.JPush;
-using JYT.JytPlatformServer.Business.Common.SignalR;
-using JYT.JytPlatformServer.Business.IServices;
-using JYT.JytPlatformServer.Common;
-using JYT.JytPlatformServer.DbModels.BusinessModels;
-using JYT.JytPlatformServer.DbRepositories.BusinessRepositories;
-using JYT.JytPlatformServer.DbRepositories.BusinessRepositories.OrganizationsRepositories;
-using JYT.JytPlatformServer.DbRepositories.BusinessRepositories.Other;
-using JYT.JytPlatformServer.DbRepositories.BusinessRepositories.ProjectManagementRepositories;
-using JYT.JytPlatformServer.DtoModels.BusinessDtoModels;
-using JYT.JytPlatformServer.DtoModels.BusinessDtoModels.Flows;
-using JYT.JytPlatformServer.DtoModels.BusinessDtoModels.Messages;
-using JYT.JytPlatformServer.DtoModels.BusinessDtoModels.Milestone;
-using JYT.JytPlatformServer.DtoModels.BusinessDtoModels.ProjectManagements;
-using JYT.JytPlatformServer.DtoModels.BusinessDtoModels.TaskManagements;
-using JYT.JytPlatformServer.DtoModels.Common;
-using JYT.JytPlatformServer.DtoModels.Common.Consts;
-using JYT.JytPlatformServer.DtoModels.Common.Enums;
-using JYT.JytPlatformServer.DtoModels.UsersDtoModels.Users;
+using JytPlatformServer.Business.Common.Helpers;
+using JytPlatformServer.Business.Common.JPush;
+using JytPlatformServer.Business.Common.SignalR;
+using JytPlatformServer.Business.IServices;
+using JytPlatformServer.Common;
+using JytPlatformServer.DbModels.BusinessModels;
+using JytPlatformServer.DbRepositories.BusinessRepositories;
+using JytPlatformServer.DbRepositories.BusinessRepositories.OrganizationsRepositories;
+using JytPlatformServer.DbRepositories.BusinessRepositories.Other;
+using JytPlatformServer.DbRepositories.BusinessRepositories.ProjectManagementRepositories;
+using JytPlatformServer.DtoModels.BusinessDtoModels;
+using JytPlatformServer.DtoModels.BusinessDtoModels.Flows;
+using JytPlatformServer.DtoModels.BusinessDtoModels.Messages;
+using JytPlatformServer.DtoModels.BusinessDtoModels.Milestone;
+using JytPlatformServer.DtoModels.BusinessDtoModels.ProjectManagements;
+using JytPlatformServer.DtoModels.BusinessDtoModels.TaskManagements;
+using JytPlatformServer.DtoModels.Common;
+using JytPlatformServer.DtoModels.Common.Consts;
+using JytPlatformServer.DtoModels.Common.Enums;
+using JytPlatformServer.DtoModels.UsersDtoModels.Users;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -391,7 +391,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Unity;
 
-namespace JYT.JytPlatformServer.Business.Services
+namespace JytPlatformServer.Business.Services
 {
     /// <summary>
     /// " + name + @"服务类
@@ -531,8 +531,7 @@ namespace JYT.JytPlatformServer.Business.Services
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
-
-namespace JYT.JytPlatformServer.DtoModels.BusinessDtoModels." + modelName + @"
+namespace JytPlatformServer.DtoModels.BusinessModels
 {
     /// <summary>
     /// " + name + @"
@@ -550,9 +549,9 @@ namespace JYT.JytPlatformServer.DtoModels.BusinessDtoModels." + modelName + @"
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using JYT.JytPlatformServer.DtoModels.Common.Enums;
+using JytPlatformServer.DtoModels.Common.Enums;
 
-namespace JYT.JytPlatformServer.DtoModels.BusinessDtoModels." + modelName + @"
+namespace JytPlatformServer.DtoModels.BusinessDtoModels
 {
     /// <summary>
     /// " + name + @"编辑模型
@@ -568,9 +567,9 @@ namespace JYT.JytPlatformServer.DtoModels.BusinessDtoModels." + modelName + @"
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using JYT.JytPlatformServer.DtoModels.Common.Enums;
+using JytPlatformServer.DtoModels.Common.Enums;
 
-namespace JYT.JytPlatformServer.DtoModels.BusinessDtoModels." + modelName + @"
+namespace JytPlatformServer.DtoModels.BusinessDtoModels
 {
     /// <summary>
     /// " + name + @"列表响应模型
@@ -587,9 +586,9 @@ namespace JYT.JytPlatformServer.DtoModels.BusinessDtoModels." + modelName + @"
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using JYT.JytPlatformServer.DtoModels.Common.Enums;
+using JytPlatformServer.DtoModels.Common.Enums;
 
-namespace JYT.JytPlatformServer.DtoModels.BusinessDtoModels." + modelName + @"
+namespace JytPlatformServer.DtoModels.BusinessDtoModels
 {
     /// <summary>
     /// " + name + @"详情响应模型
