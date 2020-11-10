@@ -144,7 +144,7 @@ namespace JytPlatformServer.WebAPI.Controllers.BusinessControllers
     /// </summary>
     public class " + modelName + @"Controller : BaseBusinessJytPlatformServerCommonController
     {
-        readonly I" + modelName + @"Service _milestoneService;
+        readonly I" + modelName + @"Service   _" + lowerName + @"Service;
 
         /// <summary>
         /// 
@@ -210,28 +210,7 @@ namespace JytPlatformServer.WebAPI.Controllers.BusinessControllers
             return await _" + lowerName + @"Service.GetDetailsAsync(id);
         }
 
-        /// <summary>
-        ///  转审（指派）
-        /// </summary>
-        /// <param name=""request"" ></param>
-        /// <returns></returns>
-        [HttpPost, Route(nameof(Assign))]
-        public async Task<HttpMessageModel> Assign(" + modelName + @"AssignRequestDto request)
-        {
-            return await _" + lowerName + @"Service.AssignAsync(request);
-        }
 
-        /// <summary>
-        /// 审批
-        /// <para>带有发送消息</para>
-        /// </summary>
-        /// <param name=""approvalTaskRequestModel"" ></param>
-        /// <returns></returns>
-        [HttpPost, Route(nameof(NodeAudit))]
-        public async Task<HttpMessageModel> NodeAudit(" + modelName + @"NodeAuditDtoModelRequestModel approvalTaskRequestModel)
-        {
-            return await_" + lowerName + @"Service.NodeAuditAsync(approvalTaskRequestModel);
-        }
     }
 }";
             CreateFile(diskPath + @"\" + modelName + "Controller.cs", str);
@@ -561,7 +540,33 @@ namespace JytPlatformServer.DtoModels.BusinessDtoModels
     }
 }
 ";
+
+
+
+            
+
+
             CreateFile(diskPath + @"\V\" + modelName + "RequestDtoModel.cs", str);
+
+
+            str = @"using System;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using JytPlatformServer.DtoModels.Common.Enums;
+
+namespace JytPlatformServer.DtoModels.BusinessDtoModels
+{
+    /// <summary>
+    /// " + name + @"分页列表请求模型
+    /// </summary>
+    public class " + modelName + @"ListPageRequestModel
+    {
+    }
+}
+";
+            CreateFile(diskPath + @"\V\" + modelName + "ListPageRequestModel.cs", str);
+
 
             str = @"using System;
 using System.ComponentModel;
@@ -597,8 +602,7 @@ namespace JytPlatformServer.DtoModels.BusinessDtoModels
     {
     }
 }
-";
-            CreateFile(diskPath + @"\V\" + modelName + "DetailsResponseModel.cs", str);
+";            CreateFile(diskPath + @"\V\" + modelName + "DetailsResponseModel.cs", str);
 
         }
     }
