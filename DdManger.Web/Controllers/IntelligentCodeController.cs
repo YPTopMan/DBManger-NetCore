@@ -530,15 +530,14 @@ namespace JYT.JytPlatformServer.Business.Services
             string str = @"using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using JYT.JytPlatformServer.DtoModels.Common.Enums;
+
 
 namespace JYT.JytPlatformServer.DtoModels.BusinessDtoModels." + modelName + @"
 {
     /// <summary>
     /// " + name + @"
     /// </summary>
-    public class " + modelName + @"
+    public class " + modelName + @" : BaseJytPlatformServerDbModel
     {
 " + propStr + @"
     }
