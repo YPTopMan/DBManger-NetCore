@@ -1,20 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DdManger.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
-using System.IO;
 
 namespace DdManger.Web.Controllers
 {
-    /// <summary>
-    /// 智能代码
-    /// </summary>
-    public class IntelligentCodeController : Controller
+    public class CodeController : Controller
     {
+
         SqlSugarClient db = new SqlSugarClient(new ConnectionConfig()
         {
             //ConnectionString = new ConfigHelper().Get<string>("sqlserver:ConnectionString"),       
@@ -26,7 +24,7 @@ namespace DdManger.Web.Controllers
         });
 
         public string diskPath { get; set; }
-        public IntelligentCodeController()
+        public CodeController()
         {
             diskPath = @"D:\IntelligentCode\" + DateTime.Now.ToString("yyyyMMdd");
 
@@ -71,12 +69,10 @@ namespace DdManger.Web.Controllers
                         }
                     }
                 }
-
-
-                //var ddd = getModel("t_accounts", "");
             }
             return Json("成功");
         }
+
 
         public void CreateFile(string path, string content)
         {
@@ -121,6 +117,7 @@ namespaceJytPlatformServer.DbRepositories.BusinessRepositories
             CreateFile(diskPath + @"\R\" + modelName + "Repository.cs", sb.ToString());
         }
 
+
         public void getController(string name, string modelName)
         {
             var lowerName = modelName.ToLower();
@@ -161,7 +158,7 @@ namespace JytPlatformServer.WebAPI.Controllers.BusinessControllers
         /// <param name=""model"" ></param>
         /// <returns></returns>     
         [HttpPost, Route(nameof(Add))]
-        public async Task<HttpMessageModel> Add(" + modelName + @"EditRequestModel model)
+        public async Task<HttpMessageModel> Add(" + modelName + @"RequestDtoModel model)
         {
             return await _" + lowerName + @"Service.AddAsync(model);
         }
@@ -183,7 +180,7 @@ namespace JytPlatformServer.WebAPI.Controllers.BusinessControllers
         /// <param name=""model"" ></param>
         /// <returns></returns>
         [HttpPost, Route(nameof(Edit))]
-        public async Task<HttpMessageModel> Edit(" + modelName + @"EditRequestModel model)
+        public async Task<HttpMessageModel> Edit(" + modelName + @"RequestDtoModel model)
         {
             return await _" + lowerName + @"Service.EditAsync(model);
         }
@@ -239,7 +236,7 @@ namespace JytPlatformServer.Business.IServices
         /// </summary>
         /// <param name=""model""></param>
         /// <returns></returns>
-        Task<HttpMessageModel> AddAsync(" + modelName + @"EditRequestModel model);
+        Task<HttpMessageModel> AddAsync(" + modelName + @"RequestDtoModel model);
 
         /// <summary>
         /// 删除" + name + @"
@@ -253,7 +250,7 @@ namespace JytPlatformServer.Business.IServices
         /// </summary>
         /// <param name=""model""></param>
         /// <returns></returns>
-        Task<HttpMessageModel> EditAsync(" + modelName + @"EditRequestModel model);
+        Task<HttpMessageModel> EditAsync(" + modelName + @"RequestDtoModel model);
 
         /// <summary>
         /// 列表查看分页
@@ -267,21 +264,7 @@ namespace JytPlatformServer.Business.IServices
         /// </summary>
         /// <param name=""id""></param>
         /// <returns></returns>
-        Task<HttpMessageModel> GetDetailsAsync(Guid id);
-
-        /// <summary>
-        /// 转审（指派）
-        /// </summary>
-        /// <param name=""request""></param>
-        /// <returns></returns>
-        Task<HttpMessageModel> AssignAsync(" + modelName + @"AssignRequestDto request);
-
-        /// <summary>
-        /// 审批
-        /// </summary>
-        /// <param name=""approvalTaskRequestModel""></param>
-        /// <returns></returns>
-        Task<HttpMessageModel> NodeAuditAsync(" + modelName + @"NodeAuditDtoModelRequestModel approvalRequestModel);
+        Task<HttpMessageModel> GetDetailsAsync(Guid id);  
     }
 }
 ");
@@ -336,39 +319,28 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
 
         public void getServer(string name, string modelName)
         {
-            var str = @"using JYT.JytCommon;
-using JYT.JytCommon.CustomAttributes;
-using JYT.JytCommon.ExtensionFunctions;
-using JYT.JytDtoModels.WebApiModels;
-using JytPlatformServer.Business.Common.Helpers;
-using JytPlatformServer.Business.Common.JPush;
-using JytPlatformServer.Business.Common.SignalR;
-using JytPlatformServer.Business.IServices;
+            var str = @"using JytPlatformServer.Business.Common.Helpers;
+using JytPlatformServer.IBusiness;
 using JytPlatformServer.Common;
 using JytPlatformServer.DbModels.BusinessModels;
-using JytPlatformServer.DbRepositories.BusinessRepositories;
-using JytPlatformServer.DbRepositories.BusinessRepositories.OrganizationsRepositories;
-using JytPlatformServer.DbRepositories.BusinessRepositories.Other;
-using JytPlatformServer.DbRepositories.BusinessRepositories.ProjectManagementRepositories;
 using JytPlatformServer.DtoModels.BusinessDtoModels;
-using JytPlatformServer.DtoModels.BusinessDtoModels.Flows;
-using JytPlatformServer.DtoModels.BusinessDtoModels.Messages;
-using JytPlatformServer.DtoModels.BusinessDtoModels.Milestone;
-using JytPlatformServer.DtoModels.BusinessDtoModels.ProjectManagements;
-using JytPlatformServer.DtoModels.BusinessDtoModels.TaskManagements;
+using JytPlatformServer.DtoModels.BusinessDtoModels.Chart;
+using JytPlatformServer.DtoModels.BusinessDtoModels.Project;
 using JytPlatformServer.DtoModels.Common;
 using JytPlatformServer.DtoModels.Common.Consts;
 using JytPlatformServer.DtoModels.Common.Enums;
-using JytPlatformServer.DtoModels.UsersDtoModels.Users;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using System.Threading.Tasks;
-using Unity;
+using JYT.JytCommon.CustomAttributes;
+using JYT.JytCommon.ExtensionFunctions;
+using JYT.JytDtoModels.WebApiModels;
+using JytPlatformServer.DbRepositories.BusinessRepositories.ProjectRepositories;
+using JytPlatformServer.DtoModels.System;
+using JytPlatformServer.DtoModels.UsersDtoModels.Users;
 
 namespace JytPlatformServer.Business.Services
 {
@@ -380,6 +352,10 @@ namespace JytPlatformServer.Business.Services
     {
         #region 属性注入
 
+        /// <summary>
+        ///  " + name + @"仓库
+        /// </summary>
+        public  " + modelName + @"Repository  " + modelName + @"Repository { get; set; }
         
         #endregion        
 
@@ -388,7 +364,7 @@ namespace JytPlatformServer.Business.Services
         /// </summary>
         /// <param name=""model""></param>
         /// <returns></returns>
-        public async Task<HttpMessageModel> AddAsync(" + modelName + @"EditRequestModel model)
+        public async Task<HttpMessageModel> AddAsync(" + modelName + @"RequestDtoModel model)
         {
             return JytHttpMessageModel.SuccessCommand();
         }
@@ -401,8 +377,12 @@ namespace JytPlatformServer.Business.Services
         /// <returns></returns>
         public async Task<HttpMessageModel> DeleteAsync(List<Guid> ids)
         {
-            var list = await Current" + modelName + @"Repository.GetSelectToListAsync(t => t, t => ids.Contains(t." + modelName + @"Id));
-
+            var list = await Current" + modelName + @"Repository.GetSelectToListAsync(t => t, t => ids.Contains(t.Id));
+             if (list == null || !list.Any())
+            {
+                 return JytHttpMessageModel.ErrorCommand(""" + name + @"不存在"");
+            }
+         
             var nowTime = DateTime.Now;
             list.ForEach(t =>
             {
@@ -420,13 +400,12 @@ namespace JytPlatformServer.Business.Services
         /// </summary>
         /// <param name=""model""></param>
         /// <returns></returns>
-        public async Task<HttpMessageModel> EditAsync(" + modelName + @"EditRequestModel model)
-        {     
-
-            var edit" + modelName + @" = await Current" + modelName + @"Repository.GetSingleByFilterAsync(t => t." + modelName + @"Id == model." + modelName + @"Id);
+        public async Task<HttpMessageModel> EditAsync(" + modelName + @"RequestDtoModel model)
+        {   
+            var edit" + modelName + @" = await " + modelName + @"Repository.GetSingleByFilterAsync(t => t.Id == model.Id);
             if (edit" + modelName + @" == null)
             {
-                return JytHttpMessageModel.ErrorCommand(MessageCodeTypeEnum." + modelName + @"NotFound);
+                return JytHttpMessageModel.ErrorCommand(""" + name + @"不存在"");
             }
      
             var nowTime = DateTime.Now;
@@ -445,10 +424,10 @@ namespace JytPlatformServer.Business.Services
         /// <returns></returns>
         public async Task<HttpMessageModel> GetDetailsAsync(Guid id)
         {
-            var milestone = await Current" + modelName + @"Repository.GetSingleByFilterAsync(t => t." + modelName + @"Id == id);
-            if (milestone == null)
+            var model = await " + modelName + @"Repository.GetSingleByFilterAsync(t => t.Id == id);
+            if ( model == null)
             {
-                return JytHttpMessageModel.ErrorCommand(MessageCodeTypeEnum." + modelName + @"NotFound);
+                return JytHttpMessageModel.ErrorCommand(.ErrorCommand(""" + name + @"不存在"");
             }
 
             var " + modelName + @"ResponseModel = new " + modelName + @"DetailsResponseModel()
@@ -468,7 +447,7 @@ namespace JytPlatformServer.Business.Services
         {
             Expression<Func<T" + modelName + @", bool>> predicate = t => milestoneIds.Contains(t.ProjectManagementMilestoneId);
 
-            var pageResult = await Current" + modelName + @"Repository.GetPageAsync(t => new " + modelName + @"ListPageResponseModel
+            var pageResult = await " + modelName + @"Repository.GetPageAsync(t => new " + modelName + @"ListPageResponseModel
             {
                 ProjectManagementMilestoneId = t.ProjectManagementMilestoneId,
                 Deliverable = t.Deliverable,
@@ -506,7 +485,7 @@ namespace JytPlatformServer.Business.Services
 
             var propStr = getModel(modelName, "");
 
-            string str = @"using System;
+            string entityStr = @"using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
@@ -521,10 +500,11 @@ namespace JytPlatformServer.DtoModels.BusinessModels
     }
 }
 ";
-            CreateFile(diskPath + @"\" + modelName + ".cs", str);
+            CreateFile(diskPath + @"\" + modelName + ".cs", entityStr);
 
 
-            str = @"using System;
+
+            var str = @"using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -535,74 +515,47 @@ namespace JytPlatformServer.DtoModels.BusinessDtoModels
     /// <summary>
     /// " + name + @"编辑模型
     /// </summary>
-    public class " + modelName + @"EditRequestModel
+    public class " + modelName + @"RequestDtoModel
     {
+" + propStr + @"
     }
-}
+
 ";
 
-
-
-            
-
-
-            CreateFile(diskPath + @"\V\" + modelName + "RequestDtoModel.cs", str);
-
-
-            str = @"using System;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using JytPlatformServer.DtoModels.Common.Enums;
-
-namespace JytPlatformServer.DtoModels.BusinessDtoModels
-{
+            str += @"   
+    /// <summary>
+    /// " + name + @"详情响应模型
+    /// </summary>
+    public class " + modelName + @"DetailsResponseModel : " + modelName + @"RequestDtoModel
+    {
+    }     
+    
     /// <summary>
     /// " + name + @"分页列表请求模型
     /// </summary>
     public class " + modelName + @"ListPageRequestModel
     {
+        /// <summary>
+        /// 自然数页码 索引值 从1 开始 
+        /// </summary>
+        public int PageIndex { get; set; } = 1;
+
+        /// <summary>
+        /// 页大小
+        /// </summary>
+        public int PageSize { get; set; } = 20;
     }
-}
-";
-            CreateFile(diskPath + @"\V\" + modelName + "ListPageRequestModel.cs", str);
 
-
-            str = @"using System;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using JytPlatformServer.DtoModels.Common.Enums;
-
-namespace JytPlatformServer.DtoModels.BusinessDtoModels
-{
-    /// <summary>
+     /// <summary>
     /// " + name + @"列表响应模型
     /// </summary>
-    public class " + modelName + @"ListResponseModel
+    public class " + modelName + @"ListResponseModel  : " + modelName + @"DetailsResponseModel
     {
-    }
+    }     
 }
 ";
-            CreateFile(diskPath + @"\V\" + modelName + "ListResponseModel.cs", str);
 
-
-            str = @"using System;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using JytPlatformServer.DtoModels.Common.Enums;
-
-namespace JytPlatformServer.DtoModels.BusinessDtoModels
-{
-    /// <summary>
-    /// " + name + @"详情响应模型
-    /// </summary>
-    public class " + modelName + @"DetailsResponseModel
-    {
-    }
-}
-";            CreateFile(diskPath + @"\V\" + modelName + "DetailsResponseModel.cs", str);
+            CreateFile(diskPath + @"\V\" + modelName + "RequestDtoModel.cs", str);
 
         }
     }
