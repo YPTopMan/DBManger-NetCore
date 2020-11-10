@@ -17,8 +17,10 @@ namespace DdManger.Web.Controllers
     {
         SqlSugarClient db = new SqlSugarClient(new ConnectionConfig()
         {
-            ConnectionString = new ConfigHelper().Get<string>("sqlserver:ConnectionString"),
-            DbType = DbType.SqlServer,
+            //ConnectionString = new ConfigHelper().Get<string>("sqlserver:ConnectionString"),       
+            //DbType = DbType.SqlServer,
+            ConnectionString = new ConfigHelper().Get<string>("mysql:ConnectionString"),
+            DbType = DbType.MySql,
             IsAutoCloseConnection = true,
             InitKeyType = InitKeyType.SystemTable
         });
@@ -56,7 +58,7 @@ namespace DdManger.Web.Controllers
 
                             // 重新赋值
                             modelName = modelLength.FirstOrDefault();
-                            getRepository(currentNamezh, modelName, "T" + modelName);
+                            getRepository(currentNamezh, modelName, modelName);
 
                             if (modelLength.Length > 1)
                             {
@@ -64,6 +66,7 @@ namespace DdManger.Web.Controllers
                                 getServer(currentNamezh, modelName);
                                 getController(currentNamezh, modelName);
                                 getViewModel(currentNamezh, modelName);
+                                //  getModel(modelName, currentNamezh);
                             }
                         }
                     }
@@ -310,24 +313,30 @@ namespace JYT.JytPlatformServer.Business.IServices
 
         public string getModel(string tableName, string modelName)
         {
-            var dbName = new ConfigHelper().Get<string>("sqlserver:Db");
+            //var dbName = new ConfigHelper().Get<string>("sqlserver:Db");
 
 
-            var sql = @"use  " + dbName + @" ;   SELECT d.name TableName,a.colorder 字段序号,a.name  ColumnName,
-(case when COLUMNPROPERTY( a.id,a.name,'IsIdentity')=1 then '√'else '' end) IsIdentity,
-(case when (SELECT count(*) FROM sysobjects  WHERE (name in (SELECT name FROM sysindexes
-WHERE (id = a.id) AND (indid in  (SELECT indid FROM sysindexkeys  WHERE (id = a.id) AND (colid in  (SELECT colid FROM syscolumns WHERE (id = a.id) AND (name = a.name)))))))  AND (xtype = 'PK'))>0 then '√' else '' end) IsPk,
-b.name  ColumnType,a.length  ByteLength ,
-COLUMNPROPERTY(a.id,a.name,'PRECISION') as [Precision],  isnull(COLUMNPROPERTY(a.id,a.name,'Scale'),0) as  decimalDigits,
-(case when a.isnullable=1 then '√'else '' end)  isnullable,isnull(e.text,'')  defaultValue,isnull(g.[value], ' ') AS [explain]
-FROM  syscolumns a
-left join systypes b on a.xtype=b.xusertype
-inner join sysobjects d on a.id=d.id and d.xtype='U' and d.name<>'dtproperties'
-left join syscomments e on a.cdefault=e.id
-left join sys.extended_properties g on a.id=g.major_id AND a.colid=g.minor_id
-left join sys.extended_properties f on d.id=f.class and f.minor_id=0
-where b.name is not null and d.name='" + tableName + @"'
-order by a.id,a.colorder";
+            //            var sql = @"use  " + dbName + @" ;   SELECT d.name TableName,a.colorder 字段序号,a.name  ColumnName,
+            //(case when COLUMNPROPERTY( a.id,a.name,'IsIdentity')=1 then '√'else '' end) IsIdentity,
+            //(case when (SELECT count(*) FROM sysobjects  WHERE (name in (SELECT name FROM sysindexes
+            //WHERE (id = a.id) AND (indid in  (SELECT indid FROM sysindexkeys  WHERE (id = a.id) AND (colid in  (SELECT colid FROM syscolumns WHERE (id = a.id) AND (name = a.name)))))))  AND (xtype = 'PK'))>0 then '√' else '' end) IsPk,
+            //b.name  ColumnType,a.length  ByteLength ,
+            //COLUMNPROPERTY(a.id,a.name,'PRECISION') as [Precision],  isnull(COLUMNPROPERTY(a.id,a.name,'Scale'),0) as  decimalDigits,
+            //(case when a.isnullable=1 then '√'else '' end)  isnullable,isnull(e.text,'')  defaultValue,isnull(g.[value], ' ') AS [explain]
+            //FROM  syscolumns a
+            //left join systypes b on a.xtype=b.xusertype
+            //inner join sysobjects d on a.id=d.id and d.xtype='U' and d.name<>'dtproperties'
+            //left join syscomments e on a.cdefault=e.id
+            //left join sys.extended_properties g on a.id=g.major_id AND a.colid=g.minor_id
+            //left join sys.extended_properties f on d.id=f.class and f.minor_id=0
+            //where b.name is not null and d.name='" + tableName + @"'
+            //order by a.id,a.colorder";
+
+
+            var dbName = new ConfigHelper().Get<string>("mysql:Db");
+            var sql = @"select  table_name as TableName,COLUMN_NAME as ColumnName,Column_Type as ColumnType,column_comment as 'Explain'
+from information_schema.`COLUMNS`
+where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
 
             var tcList = db.Ado.SqlQuery<TableColumnsViewModel>(sql).ToList();
 
@@ -335,11 +344,11 @@ order by a.id,a.colorder";
             foreach (var item in tcList)
             {
                 stringBuilder.AppendLine(@"
-            /// <summary>
-            /// " + item.Explain + @"
-            /// </summary>
-            [Description(""" + item.Explain + @""")]
-            public string " + item.ColumnName + @" { get; set; }");
+        /// <summary>
+        /// " + item.Explain + @"
+        /// </summary>
+        [Description(""" + item.Explain + @""")]
+        public string " + item.ColumnName + @" { get; set; }");
 
             }
 
@@ -516,7 +525,29 @@ namespace JYT.JytPlatformServer.Business.Services
         public void getViewModel(string name, string modelName)
         {
 
+            var propStr = getModel(modelName, "");
+
             string str = @"using System;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using JYT.JytPlatformServer.DtoModels.Common.Enums;
+
+namespace JYT.JytPlatformServer.DtoModels.BusinessDtoModels." + modelName + @"
+{
+    /// <summary>
+    /// " + name + @"
+    /// </summary>
+    public class " + modelName + @"
+    {
+" + propStr + @"
+    }
+}
+";
+            CreateFile(diskPath + @"\" + modelName + ".cs", str);
+
+
+            str = @"using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -552,7 +583,7 @@ namespace JYT.JytPlatformServer.DtoModels.BusinessDtoModels." + modelName + @"
 ";
             CreateFile(diskPath + @"\V\" + modelName + "ListResponseModel.cs", str);
 
-            
+
             str = @"using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -569,7 +600,7 @@ namespace JYT.JytPlatformServer.DtoModels.BusinessDtoModels." + modelName + @"
     }
 }
 ";
-            CreateFile(diskPath + @"\V\" + modelName + "DetailsResponseModel.cs", str);           
+            CreateFile(diskPath + @"\V\" + modelName + "DetailsResponseModel.cs", str);
 
         }
     }
