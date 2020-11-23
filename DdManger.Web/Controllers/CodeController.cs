@@ -32,6 +32,11 @@ namespace DdManger.Web.Controllers
             {
                 Directory.CreateDirectory(diskPath + @"\R");
                 Directory.CreateDirectory(diskPath + @"\V");
+                Directory.CreateDirectory(diskPath + @"\C");
+                Directory.CreateDirectory(diskPath + @"\IS");
+                Directory.CreateDirectory(diskPath + @"\S");
+                Directory.CreateDirectory(diskPath + @"\E");
+                Directory.CreateDirectory(diskPath + @"\M");
             }
         }
 
@@ -210,7 +215,7 @@ namespace JytPlatformServer.WebAPI.Controllers.BusinessControllers
 
     }
 }";
-            CreateFile(diskPath + @"\" + modelName + "Controller.cs", str);
+            CreateFile(diskPath + @"\C\" + modelName + "Controller.cs", str);
             //return str;
         }
 
@@ -268,9 +273,62 @@ namespace JytPlatformServer.Business.IServices
     }
 }
 ");
-            CreateFile(diskPath + @"\I" + modelName + "Service.cs", str);
+            CreateFile(diskPath + @"\IS\I" + modelName + "Service.cs", str);
             return str;
         }
+
+
+        public string getAgainModel(string tableName, string modelName, TypeEnum typeEnum)
+        {
+            var dbName = new ConfigHelper().Get<string>("mysql:Db");
+            var sql = @"select  table_name as TableName,COLUMN_NAME as ColumnName,DATA_Type as ColumnType,column_comment as 'Explain', (Is_Nullable='YES') as IsNullable,character_maximum_length ByteLength
+from information_schema.`COLUMNS`
+where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
+
+            var tcList = db.Ado.SqlQuery<TableColumnsViewModel>(sql).ToList();
+
+
+            if (typeEnum == TypeEnum.列表)
+            {
+                var arr = new[] { "LastUpdateEmployeeId", "LastUpdateTime", "EnterpriseId", "IsDelete" };
+                tcList = tcList.Where(t => !arr.Contains(t.ColumnName)).ToList();
+            }
+            else if (typeEnum == TypeEnum.新增)
+            {
+                var arr = new[] { "Id", "CreateEmployeeId", "CreateTime", "LastUpdateEmployeeId", "LastUpdateTime", "EnterpriseId", "IsDelete" };
+                tcList = tcList.Where(t => !arr.Contains(t.ColumnName)).ToList();
+            }
+
+            StringBuilder stringBuilder = new StringBuilder();
+            foreach (var item in tcList)
+            {
+                stringBuilder.AppendLine("           " + item.ColumnName + " = " + modelName + "." + item.ColumnName);
+            }
+
+            return stringBuilder.ToString();
+        }
+
+        public string getAgainModel2(string tableName, string modelName, string modelName2)
+        {
+            var dbName = new ConfigHelper().Get<string>("mysql:Db");
+            var sql = @"select  table_name as TableName,COLUMN_NAME as ColumnName,DATA_Type as ColumnType,column_comment as 'Explain', (Is_Nullable='YES') as IsNullable,character_maximum_length ByteLength
+from information_schema.`COLUMNS`
+where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
+
+            var tcList = db.Ado.SqlQuery<TableColumnsViewModel>(sql).ToList();
+
+            var arr = new[] { "Id", "LastUpdateEmployeeId", "LastUpdateTime", "EnterpriseId", "IsDelete" };
+            tcList = tcList.Where(t => !arr.Contains(t.ColumnName)).ToList();
+
+            StringBuilder stringBuilder = new StringBuilder();
+            foreach (var item in tcList)
+            {
+                stringBuilder.AppendLine("           " + modelName + "." + item.ColumnName + " = " + modelName2 + "." + item.ColumnName);
+            }
+
+            return stringBuilder.ToString();
+        }
+
 
 
         public string getModel(string tableName, string modelName)
@@ -305,7 +363,7 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
             StringBuilder stringBuilder = new StringBuilder();
             foreach (var item in tcList)
             {
-                var pType = MySqltoCsharpT(item.ColumnType);
+                var pType = MySqltoCsharpT(item.ColumnType).ToLower();
                 if (pType == "char" && item.ByteLength.Trim() == "36")
                 {
                     pType = "Guid";
@@ -360,7 +418,7 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
 "real","smallmoney", "sql_variant","timestamp","tinyint","uniqueidentifier","varbinary"};
 
             string[] CSharpTypes = new string[] {"int", "string","bool" ,"DateTime","Decimal","Double","Byte[]","Single",
-"string","string","DateTime","Int16","string","Int64","Byte[]","string","string","Decimal",
+"string","string","DateTime","Int16","string","Int64","Byte[]","char","string","Decimal",
 "Single","Single", "Object","Byte[]","Byte","Guid","Byte[]"};
 
             int i = Array.IndexOf(SqlTypeNames, sqlType.ToLower());
@@ -437,6 +495,20 @@ namespace JytPlatformServer.Business.Services
         /// <returns></returns>
         public async Task<HttpMessageModel> AddAsync(" + modelName + @"RequestDtoModel model)
         {
+            var nowTime = DateTime.Now;
+            var currentEmployeeId = AuthUserContext.EmployeeId;
+
+             var addEntity = new " + modelName + @"
+                {
+                    Id = Guid.NewGuid(),
+                    CreateEmployeeId = currentEmployeeId,
+                    LastUpdateEmployeeId = currentEmployeeId,
+                    CreateTime = nowTime,
+                    LastUpdateTime = nowTime,
+                  " + getAgainModel(modelName, "model", TypeEnum.新增) + @"
+                };
+
+            var commandResult = await " + modelName + @"Repository.AddAsync(addEntity);
             return JytHttpMessageModel.SuccessCommand();
         }
 
@@ -448,20 +520,22 @@ namespace JytPlatformServer.Business.Services
         /// <returns></returns>
         public async Task<HttpMessageModel> DeleteAsync(List<Guid> ids)
         {
-            var list = await Current" + modelName + @"Repository.GetSelectToListAsync(t => t, t => ids.Contains(t.Id));
+            var list = await " + modelName + @"Repository.GetSelectToListAsync(t => t, t => ids.Contains(t.Id));
              if (list == null || !list.Any())
             {
                  return JytHttpMessageModel.ErrorCommand(""" + name + @"不存在"");
             }
-         
+
+            var currentEmployeeId = AuthUserContext.EmployeeId;
             var nowTime = DateTime.Now;
             list.ForEach(t =>
             {
                 t.LastUpdateDateTime = nowTime;
                 t.IsDelete = true;
+                t.LastUpdateEmployeeId = employeeId;
             });
 
-            var commandResult = await Current" + modelName + @"Repository.EditAsync(list);
+            var commandResult = await " + modelName + @"Repository.EditAsync(list);
 
             return JytHttpMessageModel.SuccessCommand(commandResult);
         }
@@ -479,11 +553,12 @@ namespace JytPlatformServer.Business.Services
                 return JytHttpMessageModel.ErrorCommand(""" + name + @"不存在"");
             }
      
+            var currentEmployeeId = AuthUserContext.EmployeeId;
             var nowTime = DateTime.Now;
-            edit" + modelName + @".LastUpdateDateTime = nowTime;
-            edit" + modelName + @".Name = model.Name;       
- 
-            await Current" + modelName + @"Repository.EditAsync(edit" + modelName + @");
+            edit" + modelName + @".LastUpdateDateTime = nowTime;             
+            edit" + modelName + @".LastUpdateEmployeeId = employeeId;           
+             " + getAgainModel2(modelName, " edit" + modelName, "model") + @"
+            await " + modelName + @"Repository.EditAsync(edit" + modelName + @");
 
             return JytHttpMessageModel.SuccessCommand();
         }
@@ -503,7 +578,7 @@ namespace JytPlatformServer.Business.Services
 
             var " + modelName + @"ResponseModel = new " + modelName + @"DetailsResponseModel()
             {
-              
+                " + getAgainModel(modelName, "model", TypeEnum.列表) + @"
             };
           
             return JytHttpMessageModel.SuccessQuery(milestoneResponseModel);
@@ -516,23 +591,12 @@ namespace JytPlatformServer.Business.Services
         /// <returns></returns>
         public async Task<HttpMessageModel> ListPageAsync(" + modelName + @"ListPageRequestModel model)
         {
-            Expression<Func<T" + modelName + @", bool>> predicate = t => milestoneIds.Contains(t.ProjectManagementMilestoneId);
+            Expression<Func<T" + modelName + @", bool>> predicate = t => t.IsDelete ==false;
 
             var pageResult = await " + modelName + @"Repository.GetPageAsync(t => new " + modelName + @"ListPageResponseModel
             {
-                ProjectManagementMilestoneId = t.ProjectManagementMilestoneId,
-                Deliverable = t.Deliverable,
-                ExpirationReminderThreshold = t.ExpirationReminderThreshold,
-                PlannedStartTime = t.PlannedStartTime,
-                PlannedEndTime = t.PlannedEndTime,
-                ActualStartTime = t.ActualStartTime,
-                ActualEndTime = t.ActualEndTime,
-                Name = t.Name,
-                MilestoneStatus = t.MilestoneStatus,
-                Explain = t.Explain,
-                MakerEmployeeIdlistStr = t.MakerEmployeeIdList,
-                ProgressValue = t.ProgressValue
-            }, predicate, t => t.CreateDateTime, false, model.PageIndex, model.PageSize);
+               " + getAgainModel(modelName, "t", TypeEnum.列表) + @"
+            }, predicate, t => t.CreateTime, false, model.PageIndex, model.PageSize);
 
             pageResult.Items.ToList().ForEach(t =>
             {
@@ -543,7 +607,7 @@ namespace JytPlatformServer.Business.Services
     }
 }";
             //return str;
-            CreateFile(diskPath + @"\" + modelName + "Service.cs", str);
+            CreateFile(diskPath + @"\S\" + modelName + "Service.cs", str);
         }
 
         /// <summary>
@@ -571,7 +635,7 @@ namespace JytPlatformServer.DtoModels.BusinessModels
     }
 }
 ";
-            CreateFile(diskPath + @"\" + modelName + ".cs", entityStr);
+            CreateFile(diskPath + @"\M\" + modelName + ".cs", entityStr);
 
 
 
@@ -630,4 +694,11 @@ namespace JytPlatformServer.DtoModels.BusinessDtoModels
 
         }
     }
+
+    public enum TypeEnum
+    {
+        新增 = 1,
+        列表
+    }
+
 }
