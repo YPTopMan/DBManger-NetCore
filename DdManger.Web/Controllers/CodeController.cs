@@ -296,7 +296,7 @@ namespace JytPlatformServer.Business.IServices
 
 
             var dbName = new ConfigHelper().Get<string>("mysql:Db");
-            var sql = @"select  table_name as TableName,COLUMN_NAME as ColumnName,Column_Type as ColumnType,column_comment as 'Explain'
+            var sql = @"select  table_name as TableName,COLUMN_NAME as ColumnName,DATA_Type as ColumnType,column_comment as 'Explain', (Is_Nullable='YES') as IsNullable,character_maximum_length ByteLength
 from information_schema.`COLUMNS`
 where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
 
@@ -305,16 +305,87 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
             StringBuilder stringBuilder = new StringBuilder();
             foreach (var item in tcList)
             {
+                var pType = MySqltoCsharpT(item.ColumnType);
+                if (pType == "char" && item.ByteLength.Trim() == "36")
+                {
+                    pType = "Guid";
+                }
+
+                var dAtt = "";
+                if (pType == "string")
+                {
+                    if (item.IsNullable == "0")
+                    {
+                        dAtt = "[Required]\n        ";
+                    }
+                    dAtt += "[MaxLength(" + item.ByteLength + ")]";
+                }
+
+                if (item.IsNullable == "1" && (pType == "string"))
+                {
+                    pType += "?";
+                }
+
+                if (dAtt.Length > 0)
+                {
+                    dAtt += "\n        [Description(\"" + item.Explain + "\")]";
+                }
+                else
+                {
+                    dAtt = "[Description(\"" + item.Explain + "\")]";
+                }
+
                 stringBuilder.AppendLine(@"
         /// <summary>
         /// " + item.Explain + @"
-        /// </summary>
-        [Description(""" + item.Explain + @""")]
-        public string " + item.ColumnName + @" { get; set; }");
+        /// </summary>      
+        " + dAtt + @"
+        public " + pType + @" " + item.ColumnName + @" { get; set; }");
 
             }
 
             return stringBuilder.ToString();
+        }
+
+
+        /// <summary>
+        /// 将Mysql数据类型（如：varchar）转换为.Net类型（如：String）
+        /// </summary>
+        /// <param name="sqlTypeString">Sql server的数据类型</param>
+        /// <returns>相对应的C#数据类型</returns>
+        public string MySqltoCsharpT(string sqlType)
+        {
+            string[] SqlTypeNames = new string[] { "int", "varchar","bit" ,"datetime","decimal","float","image","money",
+"ntext","nvarchar","smalldatetime","smallint","text","bigint","binary","char","nchar","numeric",
+"real","smallmoney", "sql_variant","timestamp","tinyint","uniqueidentifier","varbinary"};
+
+            string[] CSharpTypes = new string[] {"int", "string","bool" ,"DateTime","Decimal","Double","Byte[]","Single",
+"string","string","DateTime","Int16","string","Int64","Byte[]","string","string","Decimal",
+"Single","Single", "Object","Byte[]","Byte","Guid","Byte[]"};
+
+            int i = Array.IndexOf(SqlTypeNames, sqlType.ToLower());
+
+            return CSharpTypes[i];
+        }
+
+        /// <summary>
+        /// 将SQLServer数据类型（如：varchar）转换为.Net类型（如：String）
+        /// </summary>
+        /// <param name="sqlTypeString">Sql server的数据类型</param>
+        /// <returns>相对应的C#数据类型</returns>
+        public string SqltoCsharpT(string sqlType)
+        {
+            string[] SqlTypeNames = new string[] { "int", "varchar","bit" ,"datetime","decimal","float","image","money",
+"ntext","nvarchar","smalldatetime","smallint","text","bigint","binary","char","nchar","numeric",
+"real","smallmoney", "sql_variant","timestamp","tinyint","uniqueidentifier","varbinary"};
+
+            string[] CSharpTypes = new string[] {"int", "string","bool" ,"DateTime","Decimal","Double","Byte[]","Single",
+"string","string","DateTime","Int16","string","Int64","Byte[]","string","string","Decimal",
+"Single","Single", "Object","Byte[]","Byte","Guid","Byte[]"};
+
+            int i = Array.IndexOf(SqlTypeNames, sqlType.ToLower());
+
+            return CSharpTypes[i];
         }
 
         public void getServer(string name, string modelName)
