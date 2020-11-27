@@ -134,7 +134,7 @@ using System.Threading.Tasks;
 using JYT.JytDtoModels.WebApiModels;
 using JytPlatformServer.Business.IServices;
 using JytPlatformServer.DtoModels.BusinessDtoModels;
-using JytPlatformServer.WebAPI.Business.Common.Models;
+using JytPlatformServer.WebAPI.Common.BusinessCommon.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -301,7 +301,7 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
             StringBuilder stringBuilder = new StringBuilder();
             foreach (var item in tcList)
             {
-                stringBuilder.AppendLine("           " + item.ColumnName + " = " + modelName + "." + item.ColumnName);
+                stringBuilder.AppendLine("           " + item.ColumnName + " = " + modelName + "." + item.ColumnName + ",");
             }
 
             return stringBuilder.ToString();
@@ -618,7 +618,7 @@ namespace JytPlatformServer.Business.Services
             var model = await " + modelName + @"Repository.GetSingleByFilterAsync(t => t.Id == id);
             if ( model == null)
             {
-                return JytHttpMessageModel.ErrorCommand(.ErrorCommand(""" + name + @"不存在"");
+                return JytHttpMessageModel.ErrorCommand(""" + name + @"不存在"");
             }
 
             var " + modelName + @"ResponseModel = new " + modelName + @"DetailsResponseModel()
@@ -739,7 +739,7 @@ namespace JytPlatformServer.DtoModels.BusinessDtoModels
      /// <summary>
     /// " + name + @"列表响应模型
     /// </summary>
-    public class " + modelName + @"ListResponseModel  : " + modelName + @"DetailsResponseModel
+    public class " + modelName + @"ListPageResponseModel  : " + modelName + @"DetailsResponseModel
     {
     }     
 }
