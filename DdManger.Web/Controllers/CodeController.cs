@@ -358,7 +358,8 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
 from information_schema.`COLUMNS`
 where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
 
-            var tcList = db.Ado.SqlQuery<TableColumnsViewModel>(sql).ToList();
+            var arr = new[] { "EnterpriseId", "IsDelete" };
+            var tcList = db.Ado.SqlQuery<TableColumnsViewModel>(sql).Where(t => !arr.Contains(t.ColumnName)).ToList();
 
             StringBuilder stringBuilder = new StringBuilder();
             foreach (var item in tcList)
@@ -367,6 +368,48 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
                 if (pType == "char" && item.ByteLength.Trim() == "36")
                 {
                     pType = "Guid";
+                }
+
+                // 生成枚举
+                if (pType == "sbyte" && item.ColumnName.ToLower() != "isdelete")
+                {
+                    if (!string.IsNullOrEmpty(item.Explain))
+                    {
+
+                        var splitArr = item.Explain.Split(" ");
+
+                        StringBuilder stringBuilder1 = new StringBuilder();
+
+                        for (int i = 1; i < splitArr.Length; i++)
+                        {
+                            if (!string.IsNullOrEmpty(splitArr[i]))
+                            {
+                                var splitValues = splitArr[i].Split(".");
+
+                                stringBuilder1.AppendLine(@"        
+        /// <summary>
+        /// 
+        /// </summary>
+        " + splitValues[1] + " = " + splitValues[0] + ", ");
+                            }
+                        }
+
+                        var enumStr = @"using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace JytPlatformServer.DtoModels.Common.Enums
+{
+    /// <summary>
+    /// " + splitArr[0] + @"
+    /// </summary>
+    public enum " + item.ColumnName + @"Enum
+    {
+" + stringBuilder1.ToString() + @"
+    }
+}";
+                        CreateFile(diskPath + @"\E\" + item.ColumnName + "Enum.cs", enumStr);
+                    }
                 }
 
                 var dAtt = "";
@@ -379,7 +422,7 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
                     dAtt += "[MaxLength(" + item.ByteLength + ")]";
                 }
 
-                if (item.IsNullable == "1" && (pType == "string"))
+                if (item.IsNullable == "1" && (pType != "string"))
                 {
                     pType += "?";
                 }
@@ -392,6 +435,7 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
                 {
                     dAtt = "[Description(\"" + item.Explain + "\")]";
                 }
+
 
                 stringBuilder.AppendLine(@"
         /// <summary>
@@ -419,7 +463,7 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
 
             string[] CSharpTypes = new string[] {"int", "string","bool" ,"DateTime","Decimal","Double","Byte[]","Single",
 "string","string","DateTime","Int16","string","Int64","Byte[]","char","string","Decimal",
-"Single","Single", "Object","Byte[]","Byte","Guid","Byte[]"};
+"Single","Single", "Object","Byte[]","sbyte","Guid","Byte[]"};
 
             int i = Array.IndexOf(SqlTypeNames, sqlType.ToLower());
 
@@ -632,6 +676,15 @@ namespace JytPlatformServer.DtoModels.BusinessModels
     public class " + modelName + @" : BaseJytPlatformServerDbModel
     {
 " + propStr + @"
+          /// <summary>
+          ///  
+          /// </summary>
+          public override bool IsDelete { get; set; }
+
+          /// <summary>
+          /// 
+          /// </summary>
+          public override Guid EnterpriseId { get; set; }
     }
 }
 ";
