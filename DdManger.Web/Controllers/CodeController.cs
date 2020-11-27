@@ -96,7 +96,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespaceJytPlatformServer.DbRepositories.BusinessRepositories
+namespace JytPlatformServer.DbRepositories.BusinessRepositories
 {
     /// <summary>
     ");
@@ -133,8 +133,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using JYT.JytDtoModels.WebApiModels;
 using JytPlatformServer.Business.IServices;
-using JytPlatformServer.DtoModels.BusinessDtoModels.Milestone;
-using JytPlatformServer.DtoModels.BusinessDtoModels.ProjectManagements;
+using JytPlatformServer.DtoModels.BusinessDtoModels;
 using JytPlatformServer.WebAPI.Business.Common.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -222,7 +221,7 @@ namespace JytPlatformServer.WebAPI.Controllers.BusinessControllers
         public string getIServer(string name, string modelName)
         {
             string str = (@"using JYT.JytDtoModels.WebApiModels;
-using JytPlatformServer.DtoModels.BusinessDtoModels.Milestone;
+using JytPlatformServer.DtoModels.BusinessDtoModels;
 using JytPlatformServer.DtoModels.BusinessDtoModels.ProjectManagements;
 using System;
 using System.Collections.Generic;
@@ -323,7 +322,7 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
             StringBuilder stringBuilder = new StringBuilder();
             foreach (var item in tcList)
             {
-                stringBuilder.AppendLine("           " + modelName + "." + item.ColumnName + " = " + modelName2 + "." + item.ColumnName);
+                stringBuilder.AppendLine("           " + modelName + "." + item.ColumnName + " = " + modelName2 + "." + item.ColumnName + ";");
             }
 
             return stringBuilder.ToString();
@@ -364,8 +363,8 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
             StringBuilder stringBuilder = new StringBuilder();
             foreach (var item in tcList)
             {
-                var pType = MySqltoCsharpT(item.ColumnType).ToLower();
-                if (pType == "char" && item.ByteLength.Trim() == "36")
+                var pType = MySqltoCsharpT(item.ColumnType);
+                if (pType.ToLower() == "char" && item.ByteLength.Trim() == "36")
                 {
                     pType = "Guid";
                 }
@@ -511,9 +510,11 @@ using System.Threading.Tasks;
 using JYT.JytCommon.CustomAttributes;
 using JYT.JytCommon.ExtensionFunctions;
 using JYT.JytDtoModels.WebApiModels;
-using JytPlatformServer.DbRepositories.BusinessRepositories.ProjectRepositories;
+using JytPlatformServer.DtoModels.BusinessModels;
 using JytPlatformServer.DtoModels.System;
 using JytPlatformServer.DtoModels.UsersDtoModels.Users;
+using JytPlatformServer.Business.IServices;
+using JytPlatformServer.DbRepositories.BusinessRepositories;
 
 namespace JytPlatformServer.Business.Services
 {
@@ -576,7 +577,7 @@ namespace JytPlatformServer.Business.Services
             {
                 t.LastUpdateDateTime = nowTime;
                 t.IsDelete = true;
-                t.LastUpdateEmployeeId = employeeId;
+                t.LastUpdateEmployeeId = currentEmployeeId;
             });
 
             var commandResult = await " + modelName + @"Repository.EditAsync(list);
@@ -600,7 +601,7 @@ namespace JytPlatformServer.Business.Services
             var currentEmployeeId = AuthUserContext.EmployeeId;
             var nowTime = DateTime.Now;
             edit" + modelName + @".LastUpdateDateTime = nowTime;             
-            edit" + modelName + @".LastUpdateEmployeeId = employeeId;           
+            edit" + modelName + @".LastUpdateEmployeeId = currentEmployeeId;           
              " + getAgainModel2(modelName, " edit" + modelName, "model") + @"
             await " + modelName + @"Repository.EditAsync(edit" + modelName + @");
 
@@ -625,7 +626,7 @@ namespace JytPlatformServer.Business.Services
                 " + getAgainModel(modelName, "model", TypeEnum.列表) + @"
             };
           
-            return JytHttpMessageModel.SuccessQuery(milestoneResponseModel);
+            return JytHttpMessageModel.SuccessQuery(" + modelName + @"ResponseModel);
         }
 
         /// <summary>
@@ -635,7 +636,7 @@ namespace JytPlatformServer.Business.Services
         /// <returns></returns>
         public async Task<HttpMessageModel> ListPageAsync(" + modelName + @"ListPageRequestModel model)
         {
-            Expression<Func<T" + modelName + @", bool>> predicate = t => t.IsDelete ==false;
+            Expression<Func<" + modelName + @", bool>> predicate = t => t.IsDelete ==false;
 
             var pageResult = await " + modelName + @"Repository.GetPageAsync(t => new " + modelName + @"ListPageResponseModel
             {
@@ -667,6 +668,7 @@ namespace JytPlatformServer.Business.Services
             string entityStr = @"using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using JytPlatformServer.DbModels;
 
 namespace JytPlatformServer.DtoModels.BusinessModels
 {
