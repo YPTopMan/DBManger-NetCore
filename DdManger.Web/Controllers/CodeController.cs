@@ -533,6 +533,8 @@ namespace JytPlatformServer.Business.Services
         
         #endregion        
 
+        #region 增删改查
+
         /// <summary>
         /// 新增
         /// </summary>
@@ -648,7 +650,13 @@ namespace JytPlatformServer.Business.Services
               
             });
             return JytHttpMessageModel.SuccessQuery(pageResult);
-        }     
+        }   
+
+        #endregion    
+
+        #region 自定义
+
+        #endregion
     }
 }";
             //return str;
