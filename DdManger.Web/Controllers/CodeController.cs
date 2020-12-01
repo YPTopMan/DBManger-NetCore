@@ -24,6 +24,16 @@ namespace DdManger.Web.Controllers
         });
 
         public string diskPath { get; set; }
+
+        public string EnumStr = @"using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace JytPlatformServer.DtoModels.Common.Enums
+{";
+
+        public string EnumName = "";
+
         public CodeController()
         {
             diskPath = @"D:\IntelligentCode\" + DateTime.Now.ToString("yyyyMMdd");
@@ -74,6 +84,8 @@ namespace DdManger.Web.Controllers
                         }
                     }
                 }
+
+                CreateFile(diskPath + @"\E\" + EnumName, EnumStr);
             }
             return Json("成功");
         }
@@ -328,8 +340,6 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
             return stringBuilder.ToString();
         }
 
-
-
         public string getModel(string tableName, string modelName)
         {
             //var dbName = new ConfigHelper().Get<string>("sqlserver:Db");
@@ -393,12 +403,8 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
                             }
                         }
 
-                        var enumStr = @"using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace JytPlatformServer.DtoModels.Common.Enums
-{
+                        var enumStr = @"
     /// <summary>
     /// " + splitArr[0] + @"
     /// </summary>
@@ -406,8 +412,17 @@ namespace JytPlatformServer.DtoModels.Common.Enums
     {
 " + stringBuilder1.ToString() + @"
     }
-}";
-                        CreateFile(diskPath + @"\E\" + item.ColumnName + "Enum.cs", enumStr);
+";
+
+                        EnumStr = EnumStr + enumStr;
+
+                        if (string.IsNullOrEmpty(EnumName))
+                        {
+                            EnumName = item.ColumnName + "Enum.cs";
+                        }
+
+
+                        pType = item.ColumnName + "Enum";
                     }
                 }
 
@@ -623,12 +638,12 @@ namespace JytPlatformServer.Business.Services
                 return JytHttpMessageModel.ErrorCommand(""" + name + @"不存在"");
             }
 
-            var " + modelName + @"ResponseModel = new " + modelName + @"DetailsResponseModel()
+            var detailResponseModel = new " + modelName + @"DetailsResponseModel()
             {
                 " + getAgainModel(modelName, "model", TypeEnum.列表) + @"
             };
           
-            return JytHttpMessageModel.SuccessQuery(" + modelName + @"ResponseModel);
+            return JytHttpMessageModel.SuccessQuery(detailResponseModel);
         }
 
         /// <summary>
@@ -670,7 +685,6 @@ namespace JytPlatformServer.Business.Services
         /// <param name="modelName"></param>
         public void getViewModel(string name, string modelName)
         {
-
             var propStr = getModel(modelName, "");
 
             string entityStr = @"using System;
@@ -699,6 +713,7 @@ namespace JytPlatformServer.DtoModels.BusinessModels
 }
 ";
             CreateFile(diskPath + @"\M\" + modelName + ".cs", entityStr);
+
 
 
 
