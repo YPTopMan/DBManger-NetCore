@@ -85,7 +85,8 @@ namespace JytPlatformServer.DtoModels.Common.Enums
                     }
                 }
 
-                CreateFile(diskPath + @"\E\" + EnumName, EnumStr);
+                if (!string.IsNullOrEmpty(EnumName))
+                    CreateFile(diskPath + @"\E\" + EnumName, EnumStr);
             }
             return Json("成功");
         }
@@ -107,6 +108,7 @@ namespace JytPlatformServer.DtoModels.Common.Enums
 using System;
 using System.Collections.Generic;
 using System.Text;
+using JytPlatformServer.DbModels.BusinessModels;
 
 namespace JytPlatformServer.DbRepositories.BusinessRepositories
 {
@@ -240,7 +242,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace JytPlatformServer.Business.IServices
+namespace JytPlatformServer.IBusiness
 {
     /// <summary>
     /// " + name + @"服务接口
@@ -692,7 +694,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using JytPlatformServer.DbModels;
 
-namespace JytPlatformServer.DtoModels.BusinessModels
+namespace JytPlatformServer.DbModels.BusinessModels
 {
     /// <summary>
     /// " + name + @"
