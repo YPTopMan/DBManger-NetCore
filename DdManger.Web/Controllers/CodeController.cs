@@ -303,12 +303,12 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
 
             if (typeEnum == TypeEnum.列表)
             {
-                var arr = new[] { "LastUpdateEmployeeId", "LastUpdateTime", "EnterpriseId", "IsDelete" };
+                var arr = new[] { "LastUpdateEmployeeId", "LastUpdateTime", "EnterpriseId", "IsDelete", "EnterpriseID" };
                 tcList = tcList.Where(t => !arr.Contains(t.ColumnName)).ToList();
             }
             else if (typeEnum == TypeEnum.新增)
             {
-                var arr = new[] { "Id", "CreateEmployeeId", "CreateTime", "LastUpdateEmployeeId", "LastUpdateTime", "EnterpriseId", "IsDelete" };
+                var arr = new[] { "Id", "CreateEmployeeId", "CreateTime", "LastUpdateEmployeeId", "LastUpdateTime", "EnterpriseId", "IsDelete", "EnterpriseID" };
                 tcList = tcList.Where(t => !arr.Contains(t.ColumnName)).ToList();
             }
 
@@ -330,7 +330,7 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
 
             var tcList = db.Ado.SqlQuery<TableColumnsViewModel>(sql).ToList();
 
-            var arr = new[] { "Id", "LastUpdateEmployeeId", "LastUpdateTime", "EnterpriseId", "IsDelete" };
+            var arr = new[] { "Id", "LastUpdateEmployeeId", "LastUpdateTime", "EnterpriseId", "IsDelete", "EnterpriseID" };
             tcList = tcList.Where(t => !arr.Contains(t.ColumnName)).ToList();
 
             StringBuilder stringBuilder = new StringBuilder();
@@ -369,7 +369,7 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
 from information_schema.`COLUMNS`
 where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
 
-            var arr = new[] { "EnterpriseId", "IsDelete" };
+            var arr = new[] { "EnterpriseId", "IsDelete", "EnterpriseID" };
             var tcList = db.Ado.SqlQuery<TableColumnsViewModel>(sql).Where(t => !arr.Contains(t.ColumnName)).ToList();
 
             StringBuilder stringBuilder = new StringBuilder();
