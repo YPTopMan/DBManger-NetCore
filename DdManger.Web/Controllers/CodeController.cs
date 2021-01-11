@@ -594,7 +594,7 @@ namespace JytPlatformServer.Business.Services
             var nowTime = DateTime.Now;
             list.ForEach(t =>
             {
-                t.LastUpdateDateTime = nowTime;
+                t.LastUpdateTime = nowTime;
                 t.IsDelete = true;
                 t.LastUpdateEmployeeId = currentEmployeeId;
             });
@@ -619,7 +619,7 @@ namespace JytPlatformServer.Business.Services
      
             var currentEmployeeId = AuthUserContext.EmployeeId;
             var nowTime = DateTime.Now;
-            edit" + modelName + @".LastUpdateDateTime = nowTime;             
+            edit" + modelName + @".LastUpdateTime = nowTime;             
             edit" + modelName + @".LastUpdateEmployeeId = currentEmployeeId;           
              " + getAgainModel2(modelName, " edit" + modelName, "model") + @"
             await " + modelName + @"Repository.EditAsync(edit" + modelName + @");
