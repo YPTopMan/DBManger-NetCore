@@ -395,7 +395,15 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
             StringBuilder stringBuilder = new StringBuilder();
             foreach (var item in tcList)
             {
-                stringBuilder.AppendLine("           " + item.ColumnName + " = " + modelName + "." + item.ColumnName + ",");
+                if (typeEnum == TypeEnum.新增 && item.ColumnType.ToLower() == "tinyint")
+                {
+                    stringBuilder.AppendLine("           " + item.ColumnName + " = (sbyte)" + modelName + "." + item.ColumnName + ",");
+                }
+                else
+                {
+                    stringBuilder.AppendLine("           " + item.ColumnName + " = " + modelName + "." + item.ColumnName + ",");
+                }
+
             }
 
             return stringBuilder.ToString();
@@ -761,7 +769,7 @@ namespace JytPlatformServer.Business.Services
         }
         public void getServerPlus(string name, string modelName, List<string> sub1List, List<SubItem> sub2List, string other = "")
         {
-            var addSubString = ""; var delSubString = ""; var editSubString = ""; 
+            var addSubString = ""; var delSubString = ""; var editSubString = "";
             var modelList = new List<string>();
 
             bool anyfile = false, anymessage = false, anyEmployee = false, anyguidArr = false, anyApproval = false;
@@ -774,6 +782,23 @@ namespace JytPlatformServer.Business.Services
                 anyEmployee = otherList.Any(t => t == "Employee");
                 anyguidArr = otherList.Any(t => t == "guid[]");
                 anyApproval = otherList.Any(t => t == "Approval");
+            }
+            if (anyfile)
+            {
+                addSubString += @"                    
+            var fileIdDic = new Dictionary<Guid, List<Guid>>();
+            if (model.AttachmentIdList != null && model.AttachmentIdList.Any())
+                fileIdDic.Add(editAppraisePlanYear.Id, model.AttachmentIdList);                
+";
+                editSubString = addSubString;
+            }
+
+            var fileStr = "";
+            if (anyfile)
+            {
+                fileStr = @"  
+                if (item.AttachmentIdList != null && item.AttachmentIdList.Any())
+                        fileIdDic.Add(addEntityAppraisePlan.Id, item.AttachmentIdList);";
             }
 
             foreach (var sub1 in sub1List)
@@ -792,6 +817,7 @@ namespace JytPlatformServer.Business.Services
 ";
                 }
 
+
                 addSubString += @"           
            var add" + sub1 + @"List = new List<" + sub1 + @">();
            foreach (var item in model." + sub1 + @"List)
@@ -807,11 +833,62 @@ namespace JytPlatformServer.Business.Services
    " + getAgainModel(sub1, "model", TypeEnum.新增) + @"
                 };
                 add" + sub1 + @"List.Add(addEntity" + sub1 + @");
+
+                " + fileStr + @"
             }
 
          await " + sub1 + @"Repository.AddRangeAsync(add" + sub1 + @"List, false);
 
     ";
+                editSubString += @" 
+            var add" + sub1 + @"List = new List<" + sub1 + @">();
+            var edit" + sub1 + @"List = new List<" + sub1 + @">();
+
+            var old" + sub1 + @"List = await " + sub1 + @"Repository.GetSelectToListAsync(t => t, t => t." + modelName + @"Id == model.Id);
+            var old" + sub1 + @"IdList = old" + sub1 + @"List.Select(t => t.Id).ToList();
+
+            foreach (var item in model." + sub1 + @"List)
+            {
+                if (!item.Id.HasValue)
+                {
+                    var addEntity" + sub1 + @" = new " + sub1 + @"
+                    {
+                        Id = Guid.NewGuid(),
+                        CreateEmployeeId = currentEmployeeId,
+                        LastUpdateEmployeeId = currentEmployeeId,
+                        CreateTime = nowTime,
+                        LastUpdateTime = nowTime,                      
+                    };               
+
+                    if (item.AttachmentIdList != null && item.AttachmentIdList.Any())
+                        fileIdDic.Add(addEntity" + sub1 + @".Id, item.AttachmentIdList);
+                }
+                else
+                {
+                    // 编辑
+                    var edit" + sub1 + @" = old" + sub1 + @"List.FirstOrDefault(st => st.Id == item.Id);
+                    edit" + sub1 + @".LastUpdateEmployeeId = currentEmployeeId;
+                    edit" + sub1 + @".LastUpdateTime = nowTime;                
+      
+                    edit" + sub1 + @"List.Add(edit" + sub1 + @");
+
+                    if (item.AttachmentIdList != null && item.AttachmentIdList.Any())
+                        fileIdDic.Add(edit" + sub1 + @".Id, item.AttachmentIdList);
+                }
+            }
+
+           // 删除
+            var delete" + sub1 + @"IdList = old" + sub1 + @"IdList.Except(model." + sub1 + @"List.Where(t => t.Id.HasValue).Select(t => t.Id.Value)).ToList();
+            var deleteOld" + sub1 + @"List = old" + sub1 + @"List.Where(t => delete" + sub1 + @"IdList.Contains(t.Id)).ToList();
+            deleteOld" + sub1 + @"List.ForEach(t =>
+            {
+                t.LastUpdateDateTime = nowTime;
+                t.IsDelete = true;
+                t.LastUpdateEmployeeId = currentEmployeeId;
+            });  
+";
+
+
             }
 
             foreach (var sub2 in sub2List)
@@ -819,7 +896,7 @@ namespace JytPlatformServer.Business.Services
                 var sub1 = sub2.Item;
                 modelList.Add(sub1);
 
-                delSubString = delSubString + @"  
+                delSubString = delSubString + @"
             var " + sub2.Parent.FirstCharToLower() + @"IdList = delete" + sub2.Parent + @"List.Select(t => t.Id).ToList();
 
             var delete" + sub1 + @"List = await " + sub1 + @"Repository.GetSelectToListAsync(t => t, t => " + sub2.Parent.FirstCharToLower() + @"IdList.Contains(t." + sub2.Parent + @"Id));
@@ -847,12 +924,62 @@ namespace JytPlatformServer.Business.Services
 " + getAgainModel(sub1, "model", TypeEnum.新增) + @"
                 };
                 add" + sub1 + @"List.Add(addEntity" + sub1 + @");
+     " + fileStr + @"
             }
 
          await " + sub1 + @"Repository.AddRangeAsync(add" + sub1 + @"List, false);
 
     ";
 
+                editSubString += @"
+                     var " + sub1.FirstCharToLower() + @"List = await " + sub1 + @"Repository.GetSelectToListAsync(t => t, t => old" + sub2.Parent + @"IdList.Contains(t." + sub2.Parent + @"Id));
+                     var add" + sub1 + @"List = new List<" + sub1 + @">();
+                     var del" + sub1 + @"List = new List<" + sub1 + @">();
+
+                    var requestIdList=new List<Guid>();
+                    
+                      var currentOldObjectEmployeeId = " + sub1.FirstCharToLower() + @"List
+                   .Where(st => st." + sub2.Parent + @"Id == edit" + sub2.Parent + @".Id).Select(st => st.SelfRatingEmployeeId).ToList();
+
+                    // 删除
+                    var deleteObjectIdList = currentOldObjectEmployeeId.Except(requestIdList).ToList();
+                    if (deleteObjectIdList.Any())
+                    {
+                        var deleteObj = " + sub1.FirstCharToLower() + @"List.Where(st => st." + sub2.Parent + @"Id == item.Id && deleteObjectIdList.Contains(st.Id));
+                        del" + sub1 + @"List.AddRange(deleteObj);
+                    }
+
+                    // 新增
+                    var addObjectList = requestIdList.Except(currentOldObjectEmployeeId);
+                    if (addObjectList.Any())
+                    {
+                        foreach (var modelEmployeeId in addObjectList)
+                        {
+                            var add" + sub1 + @"Entity = new " + sub1 + @"
+                            {
+                                Id = Guid.NewGuid(),
+                                CreateEmployeeId = currentEmployeeId,
+                                LastUpdateEmployeeId = currentEmployeeId,
+                                CreateTime = nowTime,
+                                LastUpdateTime = nowTime,
+                             
+                            };
+                            add" + sub1 + @"List.Add(add" + sub1 + @"Entity);
+
+                            nowTime = nowTime.AddSeconds(10);
+                        }
+                    } 
+
+                    del" + sub1 + @"List.AddRange(" + sub1 + @"List.Where(st => " + sub2.Parent + @"IdList.Contains(st." + sub2.Parent + @"Id)).ToList());
+                    del" + sub1 + @"List.ForEach(t =>
+                    {
+                        t.LastUpdateDateTime = nowTime;
+                        t.IsDelete = true;
+                        t.LastUpdateEmployeeId = currentEmployeeId;
+                    });
+
+            await " + sub1 + @"Repository.EditAsync(del" + sub1 + @"List, false);       
+            await " + sub1 + @"Repository.AddRangeAsync(add" + sub1 + @"List, false);";
 
             }
 
@@ -884,12 +1011,12 @@ namespace JytPlatformServer.Business.Services
 
             if (anyEmployee)
             {
-;
+                ;
             }
 
             if (anyfile)
             {
-                sss+=(@"    
+                sss += (@"    
         /// <summary>
         /// 文件服务类
         /// </summary>
@@ -897,8 +1024,12 @@ namespace JytPlatformServer.Business.Services
 
                 addSubString += @" 
               await FileService.AddBusinesFileAsync(fileIdDic);
-"
-;
+";
+
+                editSubString += @" 
+                 await FileService.AddBusinesFileAsync(fileIdDic);
+  "
+                    ;
             }
 
             if (anyguidArr)
@@ -908,10 +1039,10 @@ namespace JytPlatformServer.Business.Services
 
             if (anymessage)
             {
-                sss += (@"    
+                sss += (@"
          /// <summary>
-        /// 
-        /// </summary>
+         /// 
+         /// </summary>
         public SystemMessageService SystemMessageService { get; set; }
 ");
 
@@ -1004,7 +1135,7 @@ namespace JytPlatformServer.Business.Services
                   " + getAgainModel(modelName, "model", TypeEnum.新增) + @"
                 };
 
-              "+ addSubString + @"
+              " + addSubString + @"
             var commandResult = await " + modelName + @"Repository.AddAsync(addEntity);
             return JytHttpMessageModel.SuccessCommand();
         }
@@ -1057,7 +1188,7 @@ namespace JytPlatformServer.Business.Services
             edit" + modelName + @".LastUpdateEmployeeId = currentEmployeeId;           
              " + getAgainModel2(modelName, " edit" + modelName, "model") + @"
 
-
+   " + editSubString + @"
             await " + modelName + @"Repository.EditAsync(edit" + modelName + @");
 
             return JytHttpMessageModel.SuccessCommand();
