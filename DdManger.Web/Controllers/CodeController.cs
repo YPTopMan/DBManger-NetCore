@@ -50,6 +50,14 @@ namespace JytPlatformServer.DtoModels.Common.Enums
             }
         }
 
+        /// <summary>
+        /// http://localhost:51367/IntelligentCode?models=案例库,FailureCase*2|案例库解决方法,FailureSolution*2|案例库分析,FailureAnalysise*2
+        ///  http://localhost:51367/IntelligentCode?models=报修单原因分析,FaultPhenomenonAnalysi*2|维修单解决方案,FaultPhenomenonSolution*2
+        ///  http://localhost:51367/IntelligentCode?models=申请案例库,ApplicationFailureCase*2|申请案例库解决方法,ApplicationFailureSolution*2|申请案例库分析,ApplicationFailureAnalysise*2
+        /// http://localhost:51367/IntelligentCode?models=设备用途,EquipmentUse*2|设备工作方式,EquipmentWorkMode*2
+        /// </summary>
+        /// <param name="models"></param>
+        /// <returns></returns>
         public IActionResult Index(string models)
         {
             if (!string.IsNullOrEmpty(models))
@@ -90,6 +98,78 @@ namespace JytPlatformServer.DtoModels.Common.Enums
             }
             return Json("成功");
         }
+
+        /// <summary>
+        /// http://localhost:51367/Code/Plus?models=%E8%80%83%E5%8B%A4%E5%B9%B4%E5%BA%A6|AppraisePlanYear|AppraisePlan|AppraisePlan-AppraisePersonal|file,message,Employee,guid[],Approval
+        /// </summary>
+        /// <param name="models"></param>
+        /// <returns></returns>
+        public IActionResult Plus(string models)
+        {
+            if (!string.IsNullOrEmpty(models))
+            {
+
+                //    
+
+                var modelArray = models.Split('|');
+                var sub1Str = modelArray[2];
+                var sub1List = sub1Str.Split(',').Select(t => t).ToList();
+
+                var sub2Str = modelArray[3];
+                var sub2List = new List<SubItem>();
+                sub2Str.Split(',').Select(t => t).ToList().ForEach(t =>
+                {
+
+                    var subItemList = t.Split('-');
+                    if (subItemList.Any())
+                    {
+                        sub2List.Add(new SubItem
+                        {
+                            Parent = subItemList[0],
+                            Item = subItemList[1]
+                        });
+                    }
+                });
+
+                //  var a = 0;
+
+                getServerPlus(modelArray.FirstOrDefault(), modelArray[1], sub1List, sub2List, modelArray[4]);
+
+                //for (int i = 0; i < modelArray.Length; i++)
+                //{
+                //    var currentModel = modelArray[i];
+                //    if (!string.IsNullOrEmpty(currentModel))
+                //    {
+                //        var currentModels = currentModel.Split(',');
+
+                //        var currentNamezh = currentModels.FirstOrDefault();
+                //        var modelName = currentModels.LastOrDefault();
+                //        if (!string.IsNullOrEmpty(modelName))
+                //        {
+                //            var modelLength = modelName.Split('*');
+
+                //            // 重新赋值
+                //            modelName = modelLength.FirstOrDefault();
+                //            getRepository(currentNamezh, modelName, modelName);
+
+                //            if (modelLength.Length > 1)
+                //            {
+                //                getIServer(currentNamezh, modelName);
+                //                getServer(currentNamezh, modelName);
+                //                getController(currentNamezh, modelName);
+                //                getViewModel(currentNamezh, modelName);
+                //                //  getModel(modelName, currentNamezh);
+                //            }
+                //        }
+                //    }
+                //}
+
+                //if (!string.IsNullOrEmpty(EnumName))
+                //    CreateFile(diskPath + @"\Plus\" + EnumName, EnumStr);
+            }
+            return Json("成功");
+        }
+
 
 
         public void CreateFile(string path, string content)
@@ -679,7 +759,362 @@ namespace JytPlatformServer.Business.Services
             //return str;
             CreateFile(diskPath + @"\S\" + modelName + "Service.cs", str);
         }
+        public void getServerPlus(string name, string modelName, List<string> sub1List, List<SubItem> sub2List, string other = "")
+        {
+            var addSubString = ""; var delSubString = ""; var editSubString = ""; 
+            var modelList = new List<string>();
 
+            bool anyfile = false, anymessage = false, anyEmployee = false, anyguidArr = false, anyApproval = false;
+
+            if (!string.IsNullOrEmpty(other))
+            {
+                var otherList = other.Split(',').ToList();
+                anyfile = otherList.Any(t => t == "file");
+                anymessage = otherList.Any(t => t == "message");
+                anyEmployee = otherList.Any(t => t == "Employee");
+                anyguidArr = otherList.Any(t => t == "guid[]");
+                anyApproval = otherList.Any(t => t == "Approval");
+            }
+
+            foreach (var sub1 in sub1List)
+            {
+                modelList.Add(sub1);
+                if (!string.IsNullOrEmpty(sub1))
+                {
+                    delSubString = delSubString + @"      var delete" + sub1 + @"List = await " + sub1 + @"Repository.GetSelectToListAsync(t => t, t => ids.Contains(t." + modelName + @"Id));
+            delete" + sub1 + @"List.ForEach(t =>
+            {
+                t.LastUpdateDateTime = nowTime;
+                t.IsDelete = true;
+                t.LastUpdateEmployeeId = currentEmployeeId;
+            });
+            await " + sub1 + @"Repository.EditAsync(delete" + sub1 + @"List, false);
+";
+                }
+
+                addSubString += @"           
+           var add" + sub1 + @"List = new List<" + sub1 + @">();
+           foreach (var item in model." + sub1 + @"List)
+            {
+                var addEntity" + sub1 + @" = new " + sub1 + @"
+                {
+                    Id = Guid.NewGuid(),
+                    CreateEmployeeId = currentEmployeeId,
+                    LastUpdateEmployeeId = currentEmployeeId,
+                    CreateTime = nowTime,
+                    LastUpdateTime = nowTime,                
+                    " + modelName + @"Id = addEntity.Id,         
+   " + getAgainModel(sub1, "model", TypeEnum.新增) + @"
+                };
+                add" + sub1 + @"List.Add(addEntity" + sub1 + @");
+            }
+
+         await " + sub1 + @"Repository.AddRangeAsync(add" + sub1 + @"List, false);
+
+    ";
+            }
+
+            foreach (var sub2 in sub2List)
+            {
+                var sub1 = sub2.Item;
+                modelList.Add(sub1);
+
+                delSubString = delSubString + @"  
+            var " + sub2.Parent.FirstCharToLower() + @"IdList = delete" + sub2.Parent + @"List.Select(t => t.Id).ToList();
+
+            var delete" + sub1 + @"List = await " + sub1 + @"Repository.GetSelectToListAsync(t => t, t => " + sub2.Parent.FirstCharToLower() + @"IdList.Contains(t." + sub2.Parent + @"Id));
+            delete" + sub1 + @"List.ForEach(t =>
+            {
+                t.LastUpdateDateTime = nowTime;
+                t.IsDelete = true;
+                t.LastUpdateEmployeeId = currentEmployeeId;
+            });
+            await " + sub1 + @"Repository.EditAsync(delete" + sub1 + @"List, false);";
+
+
+                addSubString += @"           
+           var add" + sub1 + @"List = new List<" + sub1 + @">();
+           foreach (var item in model." + sub1 + @"List)
+            {
+                var addEntity" + sub1 + @" = new " + sub1 + @"
+                {
+                    Id = Guid.NewGuid(),
+                    CreateEmployeeId = currentEmployeeId,
+                    LastUpdateEmployeeId = currentEmployeeId,
+                    CreateTime = nowTime,
+                    LastUpdateTime = nowTime,                
+                    " + modelName + @"Id = addEntity.Id,       
+" + getAgainModel(sub1, "model", TypeEnum.新增) + @"
+                };
+                add" + sub1 + @"List.Add(addEntity" + sub1 + @");
+            }
+
+         await " + sub1 + @"Repository.AddRangeAsync(add" + sub1 + @"List, false);
+
+    ";
+
+
+            }
+
+            var sss = "";
+            foreach (var modelName1 in modelList)
+            {
+                sss += @"       
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public  " + modelName1 + @"Repository  " + modelName1 + @"Repository { get; set; }";
+            }
+
+
+            if (anyApproval)
+            {
+                sss += (@"    
+        /// <summary>
+        /// 审批服务
+        /// </summary>
+        public ApprovalService ApprovalService { get; set; }
+");
+
+                addSubString += @"
+            var approval = await ApprovalService.AddAsync(addEntity.Id, model.Approval, ApprovalModuleTypeEnum.项目研发, ApprovalModuleSubtypeTypeEnum.变更项目, addEntity.ChangeNumber);"
+;
+            }
+
+            if (anyEmployee)
+            {
+;
+            }
+
+            if (anyfile)
+            {
+                sss+=(@"    
+        /// <summary>
+        /// 文件服务类
+        /// </summary>
+        public FileService FileService { get; set; }");
+
+                addSubString += @" 
+              await FileService.AddBusinesFileAsync(fileIdDic);
+"
+;
+            }
+
+            if (anyguidArr)
+            {
+
+            }
+
+            if (anymessage)
+            {
+                sss += (@"    
+         /// <summary>
+        /// 
+        /// </summary>
+        public SystemMessageService SystemMessageService { get; set; }
+");
+
+                addSubString += @" 
+                       
+            #region 生成消息
+
+            var messageContent = ""消息内容"";
+
+            var messages = new List<SystemMessageAddRequestModel>();
+                foreach (var item in appraisePersonalList)
+                {
+                    messages.Add(new SystemMessageAddRequestModel
+                    {
+                        MessageContent = messageContent,
+                        SubordinateModuleBusinessId = item.Id,
+                        MessageType = SystemMessageTypeEnum.提交个人承诺,
+                        SubordinateModule = SubordinateModuleEnum.个人工作台,
+                        ReceptionEmployeeIdList = new List<Guid>() { }
+                    });
+                }
+
+                await SystemMessageService.AddAsync(messages);
+            #endregion
+                ";
+            }
+
+
+            var str = @"using JytPlatformServer.Business.Common.Helpers;
+using JytPlatformServer.IBusiness;
+using JytPlatformServer.Common;
+using JytPlatformServer.DbModels.BusinessModels;
+using JytPlatformServer.DtoModels.BusinessDtoModels;
+using JytPlatformServer.DtoModels.BusinessDtoModels.Chart;
+using JytPlatformServer.DtoModels.BusinessDtoModels.Project;
+using JytPlatformServer.DtoModels.Common;
+using JytPlatformServer.DtoModels.Common.Consts;
+using JytPlatformServer.DtoModels.Common.Enums;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Threading.Tasks;
+using JYT.JytCommon.CustomAttributes;
+using JYT.JytCommon.ExtensionFunctions;
+using JYT.JytDtoModels.WebApiModels;
+using JytPlatformServer.DtoModels.BusinessModels;
+using JytPlatformServer.DtoModels.System;
+using JytPlatformServer.DtoModels.UsersDtoModels.Users;
+using JytPlatformServer.Business.IServices;
+using JytPlatformServer.DbRepositories.BusinessRepositories;
+
+namespace JytPlatformServer.Business.Services
+{
+    /// <summary>
+    /// " + name + @"服务类
+    /// </summary>
+    [IocRegister(typeof(I" + modelName + @"Service))]
+    public class " + modelName + @"Service : BaseService, I" + modelName + @"Service
+    {
+        #region 属性注入
+
+        /// <summary>
+        ///  " + name + @"仓库
+        /// </summary>
+        public  " + modelName + @"Repository  " + modelName + @"Repository { get; set; }        
+" + sss + @"
+        #endregion        
+
+        #region 增删改查
+
+        /// <summary>
+        /// 新增
+        /// </summary>
+        /// <param name=""model""></param>
+        /// <returns></returns>
+        public async Task<HttpMessageModel> AddAsync(" + modelName + @"RequestDtoModel model)
+        {
+            var nowTime = DateTime.Now;
+            var currentEmployeeId = AuthUserContext.EmployeeId;
+
+             var addEntity = new " + modelName + @"
+                {
+                    Id = Guid.NewGuid(),
+                    CreateEmployeeId = currentEmployeeId,
+                    LastUpdateEmployeeId = currentEmployeeId,
+                    CreateTime = nowTime,
+                    LastUpdateTime = nowTime,
+                  " + getAgainModel(modelName, "model", TypeEnum.新增) + @"
+                };
+
+              "+ addSubString + @"
+            var commandResult = await " + modelName + @"Repository.AddAsync(addEntity);
+            return JytHttpMessageModel.SuccessCommand();
+        }
+
+
+        /// <summary>
+        /// 删除
+        /// </summary>
+        /// <param name=""ids""></param>
+        /// <returns></returns>
+        public async Task<HttpMessageModel> DeleteAsync(List<Guid> ids)
+        {
+            var list = await " + modelName + @"Repository.GetSelectToListAsync(t => t, t => ids.Contains(t.Id));
+             if (list == null || !list.Any())
+            {
+                 return JytHttpMessageModel.ErrorCommand(""" + name + @"不存在"");
+            }
+
+            var currentEmployeeId = AuthUserContext.EmployeeId;
+            var nowTime = DateTime.Now;
+            list.ForEach(t =>
+            {
+                t.LastUpdateTime = nowTime;
+                t.IsDelete = true;
+                t.LastUpdateEmployeeId = currentEmployeeId;
+            });
+
+ " + delSubString + @"
+            var commandResult = await " + modelName + @"Repository.EditAsync(list);
+
+            return JytHttpMessageModel.SuccessCommand(commandResult);
+        }
+
+        /// <summary>
+        /// 编辑
+        /// </summary>
+        /// <param name=""model""></param>
+        /// <returns></returns>
+        public async Task<HttpMessageModel> EditAsync(" + modelName + @"RequestDtoModel model)
+        {   
+            var edit" + modelName + @" = await " + modelName + @"Repository.GetSingleByFilterAsync(t => t.Id == model.Id);
+            if (edit" + modelName + @" == null)
+            {
+                return JytHttpMessageModel.ErrorCommand(""" + name + @"不存在"");
+            }
+     
+            var currentEmployeeId = AuthUserContext.EmployeeId;
+            var nowTime = DateTime.Now;
+            edit" + modelName + @".LastUpdateTime = nowTime;             
+            edit" + modelName + @".LastUpdateEmployeeId = currentEmployeeId;           
+             " + getAgainModel2(modelName, " edit" + modelName, "model") + @"
+
+
+            await " + modelName + @"Repository.EditAsync(edit" + modelName + @");
+
+            return JytHttpMessageModel.SuccessCommand();
+        }
+
+        /// <summary>
+        /// 查看详情
+        /// </summary>
+        /// <param name=""id""></param>
+        /// <returns></returns>
+        public async Task<HttpMessageModel> GetDetailsAsync(Guid id)
+        {
+            var model = await " + modelName + @"Repository.GetSingleByFilterAsync(t => t.Id == id);
+            if ( model == null)
+            {
+                return JytHttpMessageModel.ErrorCommand(""" + name + @"不存在"");
+            }
+
+            var detailResponseModel = new " + modelName + @"DetailsResponseModel()
+            {
+                " + getAgainModel(modelName, "model", TypeEnum.列表) + @"
+            };
+          
+            return JytHttpMessageModel.SuccessQuery(detailResponseModel);
+        }
+
+        /// <summary>
+        /// 分页查询
+        /// </summary>
+        /// <param name=""model""></param>
+        /// <returns></returns>
+        public async Task<HttpMessageModel> ListPageAsync(" + modelName + @"ListPageRequestModel model)
+        {
+            Expression<Func<" + modelName + @", bool>> predicate = t => t.IsDelete ==false;
+
+            var pageResult = await " + modelName + @"Repository.GetPageAsync(t => new " + modelName + @"ListPageResponseModel
+            {
+               " + getAgainModel(modelName, "t", TypeEnum.列表) + @"
+            }, predicate, t => t.CreateTime, false, model.PageIndex, model.PageSize);
+
+            pageResult.Items.ToList().ForEach(t =>
+            {
+              
+            });
+            return JytHttpMessageModel.SuccessQuery(pageResult);
+        }   
+
+        #endregion    
+
+        #region 自定义
+
+        #endregion
+    }
+}";
+            //return str;
+            CreateFile(diskPath + @"\Plus\" + modelName + "Service.cs", str);
+        }
         /// <summary>
         /// 获得视图模型
         /// </summary>
@@ -773,12 +1208,41 @@ namespace JytPlatformServer.DtoModels.BusinessDtoModels
             CreateFile(diskPath + @"\V\" + modelName + "RequestDtoModel.cs", str);
 
         }
+
+
+
+        public enum TypeEnum
+        {
+            新增 = 1,
+            列表
+        }
+
     }
 
-    public enum TypeEnum
+    public class SubItem
     {
-        新增 = 1,
-        列表
+        public string Parent { get; set; }
+
+        public string Item { get; set; }
+
     }
 
+    public static class AAA
+    {
+
+        /// <summary>
+        /// 首字母小写写
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public static string FirstCharToLower(this string input)
+        {
+            if (String.IsNullOrEmpty(input))
+                return input;
+            string str = input.First().ToString().ToLower() + input.Substring(1);
+            return str;
+
+        }
+
+    }
 }
