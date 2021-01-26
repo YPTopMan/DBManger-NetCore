@@ -101,6 +101,8 @@ namespace JytPlatformServer.DtoModels.Common.Enums
 
         /// <summary>
         /// http://localhost:51367/Code/Plus?models=%E8%80%83%E5%8B%A4%E5%B9%B4%E5%BA%A6|AppraisePlanYear|AppraisePlan|AppraisePlan-AppraisePersonal|file,message,Employee,guid[],Approval
+        /// 
+        /// http://localhost:51367/Code/Plus?models=%E8%80%83%E5%8B%A4%E5%B9%B4%E5%BA%A6|AppraisePlanYear|AppraisePlan|AppraisePlan-AppraisePersonal|file,message,Employee,guid[],Approval
         /// </summary>
         /// <param name="models"></param>
         /// <returns></returns>
@@ -108,9 +110,6 @@ namespace JytPlatformServer.DtoModels.Common.Enums
         {
             if (!string.IsNullOrEmpty(models))
             {
-
-                //    
-
                 var modelArray = models.Split('|');
                 var sub1Str = modelArray[2];
                 var sub1List = sub1Str.Split(',').Select(t => t).ToList();
@@ -131,41 +130,7 @@ namespace JytPlatformServer.DtoModels.Common.Enums
                     }
                 });
 
-                //  var a = 0;
-
                 getServerPlus(modelArray.FirstOrDefault(), modelArray[1], sub1List, sub2List, modelArray[4]);
-
-                //for (int i = 0; i < modelArray.Length; i++)
-                //{
-                //    var currentModel = modelArray[i];
-                //    if (!string.IsNullOrEmpty(currentModel))
-                //    {
-                //        var currentModels = currentModel.Split(',');
-
-                //        var currentNamezh = currentModels.FirstOrDefault();
-                //        var modelName = currentModels.LastOrDefault();
-                //        if (!string.IsNullOrEmpty(modelName))
-                //        {
-                //            var modelLength = modelName.Split('*');
-
-                //            // 重新赋值
-                //            modelName = modelLength.FirstOrDefault();
-                //            getRepository(currentNamezh, modelName, modelName);
-
-                //            if (modelLength.Length > 1)
-                //            {
-                //                getIServer(currentNamezh, modelName);
-                //                getServer(currentNamezh, modelName);
-                //                getController(currentNamezh, modelName);
-                //                getViewModel(currentNamezh, modelName);
-                //                //  getModel(modelName, currentNamezh);
-                //            }
-                //        }
-                //    }
-                //}
-
-                //if (!string.IsNullOrEmpty(EnumName))
-                //    CreateFile(diskPath + @"\Plus\" + EnumName, EnumStr);
             }
             return Json("成功");
         }
@@ -769,7 +734,7 @@ namespace JytPlatformServer.Business.Services
         }
         public void getServerPlus(string name, string modelName, List<string> sub1List, List<SubItem> sub2List, string other = "")
         {
-            var addSubString = ""; var delSubString = ""; var editSubString = "";
+            var addSubString = ""; var delSubString = ""; var editSubString = ""; var detailString = "";
             var modelList = new List<string>();
 
             bool anyfile = false, anymessage = false, anyEmployee = false, anyguidArr = false, anyApproval = false;
@@ -788,10 +753,18 @@ namespace JytPlatformServer.Business.Services
                 addSubString += @"                    
             var fileIdDic = new Dictionary<Guid, List<Guid>>();
             if (model.AttachmentIdList != null && model.AttachmentIdList.Any())
-                fileIdDic.Add(editAppraisePlanYear.Id, model.AttachmentIdList);                
+                fileIdDic.Add(addEntity.Id, model.AttachmentIdList);                
 ";
-                editSubString = addSubString;
+                editSubString = @"                    
+            var fileIdDic = new Dictionary<Guid, List<Guid>>();
+            if (model.AttachmentIdList != null && model.AttachmentIdList.Any())
+                fileIdDic.Add(editAppraisePlanYear.Id, model.AttachmentIdList);  
+";
+
+                detailString += "        detailResponseModel.AttachmentList = await FileService.GetBusinesFileListAsync(model.Id);";
+
             }
+
 
             var fileStr = "";
             if (anyfile)
@@ -843,7 +816,6 @@ namespace JytPlatformServer.Business.Services
                 editSubString += @" 
             var add" + sub1 + @"List = new List<" + sub1 + @">();
             var edit" + sub1 + @"List = new List<" + sub1 + @">();
-
             var old" + sub1 + @"List = await " + sub1 + @"Repository.GetSelectToListAsync(t => t, t => t." + modelName + @"Id == model.Id);
             var old" + sub1 + @"IdList = old" + sub1 + @"List.Select(t => t.Id).ToList();
 
@@ -888,7 +860,19 @@ namespace JytPlatformServer.Business.Services
             });  
 ";
 
+                detailString += @"
+            Expression<Func<" + sub1 + @", bool>> predicate" + sub1 + @"t = t => t." + modelName + @"Id == model.Id;    
 
+            var " + sub1.FirstCharToLower() + @"List = await " + sub1 + @"Repository.GetSelectToListAsync(model => new " + sub1 + @"DetailsResponseModel()
+            {
+                Id = model.Id,
+                CreateEmployeeId = model.CreateEmployeeId,
+                CreateTime = model.CreateTime,
+   " + getAgainModel(sub1, "model", TypeEnum.列表) + @"
+            }, predicate" + sub1 + @"t);
+
+
+         detailResponseModel." + sub1 + @"List = " + sub1.FirstCharToLower() + @"List;";
             }
 
             foreach (var sub2 in sub2List)
@@ -945,7 +929,7 @@ namespace JytPlatformServer.Business.Services
                     var deleteObjectIdList = currentOldObjectEmployeeId.Except(requestIdList).ToList();
                     if (deleteObjectIdList.Any())
                     {
-                        var deleteObj = " + sub1.FirstCharToLower() + @"List.Where(st => st." + sub2.Parent + @"Id == item.Id && deleteObjectIdList.Contains(st.Id));
+                        var deleteObj = " + sub1.FirstCharToLower() + @"List.Where(st => st." + sub2.Parent + @"Id == edit" + sub2.Parent + @".Id && deleteObjectIdList.Contains(st.Id));
                         del" + sub1 + @"List.AddRange(deleteObj);
                     }
 
@@ -981,6 +965,23 @@ namespace JytPlatformServer.Business.Services
             await " + sub1 + @"Repository.EditAsync(del" + sub1 + @"List, false);       
             await " + sub1 + @"Repository.AddRangeAsync(add" + sub1 + @"List, false);";
 
+
+                detailString += @"           
+           var " + sub2.Parent.FirstCharToLower() + @"IdList = " + sub2.Parent.FirstCharToLower() + @"List.Select(t => t.Id).ToList();
+           var " + sub1.FirstCharToLower() + @"List = await " + sub1 + @"Repository.GetSelectToListAsync(t => t, t => " + sub2.Parent.FirstCharToLower() + @"IdList.Contains(t." + sub2.Parent + @"Id));
+
+            var employeeIdList = new List<Guid>();
+            foreach (var item in " + sub2.Parent.FirstCharToLower() + @"List)
+            {       
+              " + getAgainModel2(sub1, " item", "model") + @"
+                // 
+                var objectEmployeeIdList = " + sub1.FirstCharToLower() + @"List.Where(st => st." + sub2.Parent + @"Id == item.Id).Select(st => st.Id).ToList();
+                if (objectEmployeeIdList != null && objectEmployeeIdList.Any())
+                {
+                    employeeIdList.AddRange(objectEmployeeIdList);
+                    // item.ObjectEmployeeIdList = objectEmployeeIdList;
+                }
+            }";
             }
 
             var sss = "";
@@ -1005,18 +1006,30 @@ namespace JytPlatformServer.Business.Services
 ");
 
                 addSubString += @"
-            var approval = await ApprovalService.AddAsync(addEntity.Id, model.Approval, ApprovalModuleTypeEnum.项目研发, ApprovalModuleSubtypeTypeEnum.变更项目, addEntity.ChangeNumber);"
-;
+            var approval = await ApprovalService.AddAsync(addEntity.Id, model.Approval, ApprovalModuleTypeEnum.项目研发, ApprovalModuleSubtypeTypeEnum.变更项目, addEntity.ChangeNumber);";
+
+                detailString += @"           
+            // 加载审批信息
+            await ApprovalService.GetApprovalAsync(detailResponseModel.Id, detailResponseModel, approvalId);";
+
             }
 
             if (anyEmployee)
             {
-                ;
+                detailString += @"           
+            var employeeNameDtos = await CurrentSystemEmployeeRepository.GetEmployeeNameDtoByIds(employeeIdList);
+
+            var objectEmployeeList=employeeNameDtos.Where(st => item.ObjectEmployeeIdList.Contains(st.EmployeeId)).ToList();
+";
+                if (anyguidArr)
+                {
+                    detailString += @"          var objectEmployeeIdList =  JYT.JytCommon.SerializeHelper.DeserializeFromJson<List<Guid>>("""");";
+                }
             }
 
             if (anyfile)
             {
-                sss += (@"    
+                sss += (@"
         /// <summary>
         /// 文件服务类
         /// </summary>
@@ -1211,6 +1224,8 @@ namespace JytPlatformServer.Business.Services
             {
                 " + getAgainModel(modelName, "model", TypeEnum.列表) + @"
             };
+
+"+ detailString + @"
           
             return JytHttpMessageModel.SuccessQuery(detailResponseModel);
         }
