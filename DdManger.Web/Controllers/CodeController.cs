@@ -374,6 +374,58 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
             return stringBuilder.ToString();
         }
 
+        public string getAgainModelWhere(string tableName, string modelName)
+        {
+            var dbName = new ConfigHelper().Get<string>("mysql:Db");
+            var sql = @"select  table_name as TableName,COLUMN_NAME as ColumnName,DATA_Type as ColumnType,column_comment as 'Explain', (Is_Nullable='YES') as IsNullable,character_maximum_length ByteLength
+from information_schema.`COLUMNS`
+where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
+
+            var tcList = db.Ado.SqlQuery<TableColumnsViewModel>(sql).ToList();
+            var arr = new[] { "LastUpdateEmployeeId", "LastUpdateTime", "EnterpriseId", "IsDelete", "EnterpriseID", "Id" };
+            tcList = tcList.Where(t => !arr.Contains(t.ColumnName)).ToList();
+
+
+            StringBuilder stringBuilder = new StringBuilder();
+            foreach (var item in tcList)
+            {
+                item.ColumnType = MySqltoCsharpT(item.ColumnType);
+                if (item.ColumnType.ToLower() == "char" && item.ByteLength.Trim() == "36")
+                {
+                    item.ColumnType = "Guid";
+                }
+
+                if (item.ColumnType.ToLower() == "string")
+                {
+                    stringBuilder.AppendLine(@"                 if (!string.IsNullOrEmpty(model." + item.ColumnName + @"))
+            {
+                predicate = predicate.And(t => t." + item.ColumnName + @".Contains(model." + item.ColumnName + @"));
+            }
+                    ");
+                }
+
+                if (item.IsNullable == "1" && (item.ColumnType != "string"))
+                {
+                    if (item.ColumnType.ToLower() != "tinyint")
+                    {
+                        stringBuilder.AppendLine(@"            if (model." + item.ColumnName + @".HasValue)
+            {
+                predicate = predicate.And(t => t." + item.ColumnName + @" == model." + item.ColumnName + @");
+            }");
+                    }
+                    else
+                    {
+                        stringBuilder.AppendLine(@"            if (model." + item.ColumnName + @".HasValue)
+            {
+                predicate = predicate.And(t => t." + item.ColumnName + @"== (sbyte)model." + item.ColumnName + @");
+            }");
+                    }
+                }
+            }
+
+            return stringBuilder.ToString();
+        }
+
         public string getAgainModel2(string tableName, string modelName, string modelName2)
         {
             var dbName = new ConfigHelper().Get<string>("mysql:Db");
@@ -395,7 +447,7 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
             return stringBuilder.ToString();
         }
 
-        public string getModel(string tableName, string modelName)
+        public string getModel(string tableName, TypeEnum typeEnum = TypeEnum.新增)
         {
             //var dbName = new ConfigHelper().Get<string>("sqlserver:Db");
 
@@ -424,6 +476,12 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
 
             var arr = new[] { "EnterpriseId", "IsDelete", "EnterpriseID" };
             var tcList = db.Ado.SqlQuery<TableColumnsViewModel>(sql).Where(t => !arr.Contains(t.ColumnName)).ToList();
+
+            if (typeEnum == TypeEnum.分页)
+            {
+                arr = new[] { "LastUpdateEmployeeId", "LastUpdateTime", "EnterpriseId", "IsDelete", "EnterpriseID", "CreateTime", "LastUpdateTime", "CreateDateTime", "LastUpdateDateTime", "Id", "CreateEmployeeId", "LastUpdateEmployeeId" };
+                tcList = tcList.Where(t => !arr.Contains(t.ColumnName)).ToList();
+            }
 
             StringBuilder stringBuilder = new StringBuilder();
             foreach (var item in tcList)
@@ -709,6 +767,7 @@ namespace JytPlatformServer.Business.Services
         public async Task<HttpMessageModel> ListPageAsync(" + modelName + @"ListPageRequestModel model)
         {
             Expression<Func<" + modelName + @", bool>> predicate = t => t.IsDelete ==false;
+ " + getAgainModelWhere(modelName, "t") + @"
 
             var pageResult = await " + modelName + @"Repository.GetPageAsync(t => new " + modelName + @"ListPageResponseModel
             {
@@ -1225,7 +1284,7 @@ namespace JytPlatformServer.Business.Services
                 " + getAgainModel(modelName, "model", TypeEnum.列表) + @"
             };
 
-"+ detailString + @"
+" + detailString + @"
           
             return JytHttpMessageModel.SuccessQuery(detailResponseModel);
         }
@@ -1259,6 +1318,8 @@ namespace JytPlatformServer.Business.Services
     }
 }";
             //return str;
+            Directory.CreateDirectory(diskPath + @"\Plus");
+
             CreateFile(diskPath + @"\Plus\" + modelName + "Service.cs", str);
         }
         /// <summary>
@@ -1268,7 +1329,9 @@ namespace JytPlatformServer.Business.Services
         /// <param name="modelName"></param>
         public void getViewModel(string name, string modelName)
         {
-            var propStr = getModel(modelName, "");
+            var propStr = getModel(modelName);
+
+            var fyPropStr = getModel(modelName, TypeEnum.分页);
 
             string entityStr = @"using System;
 using System.ComponentModel;
@@ -1340,6 +1403,7 @@ namespace JytPlatformServer.DtoModels.BusinessDtoModels
         /// 页大小
         /// </summary>
         public int PageSize { get; set; } = 20;
+" + fyPropStr + @"
     }
 
      /// <summary>
@@ -1360,7 +1424,8 @@ namespace JytPlatformServer.DtoModels.BusinessDtoModels
         public enum TypeEnum
         {
             新增 = 1,
-            列表
+            列表 = 2,
+            分页 = 3
         }
 
     }
