@@ -362,11 +362,11 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
             {
                 if (typeEnum == TypeEnum.新增 && item.ColumnType.ToLower() == "tinyint")
                 {
-                    stringBuilder.AppendLine("           " + item.ColumnName + " = (sbyte)" + modelName + "." + item.ColumnName + ",");
+                    stringBuilder.AppendLine("                   " + item.ColumnName + " = (sbyte)" + modelName + "." + item.ColumnName + ",");
                 }
                 else
                 {
-                    stringBuilder.AppendLine("           " + item.ColumnName + " = " + modelName + "." + item.ColumnName + ",");
+                    stringBuilder.AppendLine("                   " + item.ColumnName + " = " + modelName + "." + item.ColumnName + ",");
                 }
 
             }
@@ -447,7 +447,7 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
             return stringBuilder.ToString();
         }
 
-        public string getModel(string tableName, TypeEnum typeEnum = TypeEnum.新增)
+        public string getModel(string tableName, TypeEnum typeEnum = TypeEnum.新增, string modelType = "VM")
         {
             //var dbName = new ConfigHelper().Get<string>("sqlserver:Db");
 
@@ -526,16 +526,16 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
 " + stringBuilder1.ToString() + @"
     }
 ";
-
-                        EnumStr = EnumStr + enumStr;
+                        if (modelType == "entity")
+                            EnumStr = EnumStr + enumStr;
 
                         if (string.IsNullOrEmpty(EnumName))
                         {
                             EnumName = item.ColumnName + "Enum.cs";
                         }
 
-
-                        pType = item.ColumnName + "Enum";
+                        if (modelType != "entity")
+                            pType = item.ColumnName + "Enum";
                     }
                 }
 
@@ -546,7 +546,7 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
                     {
                         dAtt = "[Required]\n        ";
                     }
-                    dAtt += "[MaxLength(" + item.ByteLength + ")]";
+                    //  dAtt += "[MaxLength(" + item.ByteLength + ")]";
                 }
 
                 if (item.IsNullable == "1" && (pType != "string"))
@@ -588,8 +588,8 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
 "ntext","nvarchar","smalldatetime","smallint","text","bigint","binary","char","nchar","numeric",
 "real","smallmoney", "sql_variant","timestamp","tinyint","uniqueidentifier","varbinary"};
 
-            string[] CSharpTypes = new string[] {"int", "string","bool" ,"DateTime","Decimal","Double","Byte[]","Single",
-"string","string","DateTime","Int16","string","Int64","Byte[]","char","string","Decimal",
+            string[] CSharpTypes = new string[] {"int", "string","bool" ,"DateTime","decimal","double","Byte[]","Single",
+"string","string","DateTime","Int16","string","Int64","Byte[]","char","string","decimal",
 "Single","Single", "Object","Byte[]","sbyte","Guid","Byte[]"};
 
             int i = Array.IndexOf(SqlTypeNames, sqlType.ToLower());
@@ -1329,7 +1329,9 @@ namespace JytPlatformServer.Business.Services
         /// <param name="modelName"></param>
         public void getViewModel(string name, string modelName)
         {
-            var propStr = getModel(modelName);
+            var entityPropStr = getModel(modelName, modelType: "entity");
+
+            var propStr = getModel(modelName, TypeEnum.分页);
 
             var fyPropStr = getModel(modelName, TypeEnum.分页);
 
@@ -1345,7 +1347,7 @@ namespace JytPlatformServer.DbModels.BusinessModels
     /// </summary>
     public class " + modelName + @" : BaseJytPlatformServerDbModel
     {
-" + propStr + @"
+" + entityPropStr + @"
           /// <summary>
           ///  
           /// </summary>
@@ -1376,6 +1378,12 @@ namespace JytPlatformServer.DtoModels.BusinessDtoModels
     /// </summary>
     public class " + modelName + @"RequestDtoModel
     {
+
+        /// <summary>
+        /// 
+        /// </summary>     
+        public Guid? Id { get; set; }
+
 " + propStr + @"
     }
 
