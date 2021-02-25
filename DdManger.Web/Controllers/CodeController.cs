@@ -363,6 +363,10 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
                 if (typeEnum == TypeEnum.新增 && item.ColumnType.ToLower() == "tinyint")
                 {
                     stringBuilder.AppendLine("                   " + item.ColumnName + " = (sbyte)" + modelName + "." + item.ColumnName + ",");
+                }else 
+                if (typeEnum == TypeEnum.列表 && item.ColumnType.ToLower() == "tinyint")
+                {
+                    stringBuilder.AppendLine("                   " + item.ColumnName + " = (" + item.ColumnName + "Enum)" + modelName + "." + item.ColumnName + ",");
                 }
                 else
                 {
@@ -389,6 +393,7 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
             StringBuilder stringBuilder = new StringBuilder();
             foreach (var item in tcList)
             {
+                var aaa = item.ColumnType;
                 item.ColumnType = MySqltoCsharpT(item.ColumnType);
                 if (item.ColumnType.ToLower() == "char" && item.ByteLength.Trim() == "36")
                 {
@@ -406,7 +411,7 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
 
                 if (item.IsNullable == "1" && (item.ColumnType != "string"))
                 {
-                    if (item.ColumnType.ToLower() != "tinyint")
+                    if (aaa.ToLower() != "tinyint")
                     {
                         stringBuilder.AppendLine(@"            if (model." + item.ColumnName + @".HasValue)
             {
@@ -435,13 +440,20 @@ where table_schema = '" + dbName + "' and   table_name='" + tableName + "s'";
 
             var tcList = db.Ado.SqlQuery<TableColumnsViewModel>(sql).ToList();
 
-            var arr = new[] { "Id", "LastUpdateEmployeeId", "LastUpdateTime", "EnterpriseId", "IsDelete", "EnterpriseID" };
+            var arr = new[] { "Id", "LastUpdateEmployeeId", "LastUpdateTime", "EnterpriseId", "IsDelete", "EnterpriseID", "CreateTime", "CreateEmployeeId" };
             tcList = tcList.Where(t => !arr.Contains(t.ColumnName)).ToList();
 
             StringBuilder stringBuilder = new StringBuilder();
             foreach (var item in tcList)
             {
-                stringBuilder.AppendLine("           " + modelName + "." + item.ColumnName + " = " + modelName2 + "." + item.ColumnName + ";");
+                if (item.ColumnType.ToLower() == "tinyint")
+                {
+                    stringBuilder.AppendLine("            " + modelName + "."  + item.ColumnName + " = (sbyte)" + modelName + "." + item.ColumnName + ";");
+                }
+                else
+                {
+                    stringBuilder.AppendLine("           " + modelName + "." + item.ColumnName + " = " + modelName2 + "." + item.ColumnName + ";");
+                }
             }
 
             return stringBuilder.ToString();
@@ -1395,6 +1407,19 @@ namespace JytPlatformServer.DtoModels.BusinessDtoModels
     /// </summary>
     public class " + modelName + @"DetailsResponseModel : " + modelName + @"RequestDtoModel
     {
+
+        /// <summary>
+        /// 创建人
+        /// </summary>      
+        [Description(""创建人"")]
+        public Guid CreateEmployeeId { get; set; }
+
+        /// <summary>
+        /// 创建时间
+        /// </summary>      
+        [Description(""创建时间"")]
+        public DateTime CreateTime { get; set; }
+
     }     
     
     /// <summary>
